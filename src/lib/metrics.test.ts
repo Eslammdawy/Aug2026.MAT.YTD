@@ -10,8 +10,12 @@ import {
   calcHHI,
   calcMarketShare,
   calcMomentum,
+  calcPriceIndex,
   calcPriceMixGrowth,
   calcRelativeShareChange,
+  calcSeasonalityIndex,
+  calcShareOfGrowthPct,
+  computeRevenueFragilitySegments,
   computeScopeRanks,
   GROWTH_CAP_DECIMAL,
   normalizeSourceGrowth2024,
@@ -122,5 +126,45 @@ describe('metrics.ts pure calculation utilities', () => {
     // Source 2024 growth normalization: -1 with 0 sales -> null
     expect(normalizeSourceGrowth2024(-1, 0).status).toBe('null');
     expect(normalizeSourceGrowth2024(12.5, 100).isCapped).toBe(true);
+  });
+
+  it('computes Share of Growth (SOG %) across expanding and contracting scopes', () => {
+    expect(calcShareOfGrowthPct(250, 1000)).toBeCloseTo(25.0, 5);
+    // When scope is contracting (-500), denominator uses |scopeAbsGrowth| = 500
+    expect(calcShareOfGrowthPct(100, -500)).toBeCloseTo(20.0, 5);
+    expect(calcShareOfGrowthPct(-150, -500)).toBeCloseTo(-30.0, 5);
+    expect(calcShareOfGrowthPct(100, 0)).toBeNull();
+  });
+
+  it('computes Price Index and Seasonality Index with zero-base guards', () => {
+    expect(calcPriceIndex(150, 100)).toBeCloseTo(1.5, 5);
+    expect(calcPriceIndex(null, 100)).toBeNull();
+    expect(calcPriceIndex(150, 0)).toBeNull();
+
+    // Expected uniform 8-month share is 8/12 = 0.6667. If YTD = 80 and MAT = 100 -> 0.8 / (8/12) = 1.20
+    expect(calcSeasonalityIndex(80, 100)).toBeCloseTo(1.2, 5);
+    expect(calcSeasonalityIndex(50, 0)).toBeNull();
+  });
+
+  it('computes non-overlapping Revenue Fragility segments summing to 100%', () => {
+    const items = [
+      { v2025: 0, v2026: 100, packCount: 1 }, // Launch (100) — must not double-count in single-pack
+      { v2025: 200, v2026: 300, packCount: 1 }, // Single-pack incumbent (300) — must not enter top-3 multi-pack
+      { v2025: 150, v2026: 250, packCount: 3 }, // Multi-pack #1 (250)
+      { v2025: 120, v2026: 150, packCount: 2 }, // Multi-pack #2 (150)
+      { v2025: 90, v2026: 100, packCount: 4 }, // Multi-pack #3 (100)
+      { v2025: 80, v2026: 100, packCount: 2 }, // Multi-pack #4 -> Other (100)
+    ];
+    const res = computeRevenueFragilitySegments(items);
+    expect(res.launchSharePct).toBeCloseTo(10.0, 5);
+    expect(res.singlePackSharePct).toBeCloseTo(30.0, 5);
+    expect(res.top3SharePct).toBeCloseTo(50.0, 5);
+    expect(res.otherSharePct).toBeCloseTo(10.0, 5);
+    const totalPct =
+      res.launchSharePct +
+      res.singlePackSharePct +
+      res.top3SharePct +
+      res.otherSharePct;
+    expect(totalPct).toBeCloseTo(100.0, 5);
   });
 });

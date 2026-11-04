@@ -398,3 +398,187 @@ export function normalizeSourceGrowth2024(
     isCapped,
   };
 }
+
+/**
+ * Share of Growth (SOG %) = (rowAbsGrowth / |scopeAbsGrowth|) * 100.
+ * When scopeAbsGrowth > 0, positive SOG means contributing to market expansion.
+ * When scopeAbsGrowth < 0 (contracting scope), dividing by |scopeAbsGrowth| preserves sign
+ * so positive growers still show positive growth capture while decliners show negative drag.
+ * Returns null if scopeAbsGrowth === 0.
+ */
+export function calcShareOfGrowthPct(
+  rowAbsGrowth: number | null | undefined,
+  scopeAbsGrowth: number | null | undefined
+): number | null {
+  if (
+    rowAbsGrowth === null ||
+    rowAbsGrowth === undefined ||
+    Number.isNaN(rowAbsGrowth) ||
+    scopeAbsGrowth === null ||
+    scopeAbsGrowth === undefined ||
+    Number.isNaN(scopeAbsGrowth) ||
+    scopeAbsGrowth === 0
+  ) {
+    return null;
+  }
+  return (rowAbsGrowth / Math.abs(scopeAbsGrowth)) * 100;
+}
+
+/**
+ * Price Index = entityAvgPrice / benchmarkAvgPrice (1.0 = parity with benchmark).
+ * Returns null if either price is null, NaN, or <= 0.
+ */
+export function calcPriceIndex(
+  entityAvgPrice: number | null | undefined,
+  benchmarkAvgPrice: number | null | undefined
+): number | null {
+  if (
+    entityAvgPrice === null ||
+    entityAvgPrice === undefined ||
+    Number.isNaN(entityAvgPrice) ||
+    entityAvgPrice <= 0 ||
+    benchmarkAvgPrice === null ||
+    benchmarkAvgPrice === undefined ||
+    Number.isNaN(benchmarkAvgPrice) ||
+    benchmarkAvgPrice <= 0
+  ) {
+    return null;
+  }
+  return entityAvgPrice / benchmarkAvgPrice;
+}
+
+/**
+ * Seasonality / Front-Load Index = (YTD / MAT) / (8 / 12) = (YTD / MAT) * 1.5.
+ * Neutral (even 8-of-12 month pacing) = 1.00.
+ * >= 1.10 indicates front-loaded Jan–Aug demand; <= 0.90 indicates back-loaded Sep–Dec demand.
+ * Returns null if matValue <= 0 or ytdValue <= 0 or ytdValue > matValue * 1.5.
+ */
+export function calcSeasonalityIndex(
+  ytdValue: number | null | undefined,
+  matValue: number | null | undefined
+): number | null {
+  const ytd = toSumValue(ytdValue);
+  const mat = toSumValue(matValue);
+  if (mat <= 0 || ytd <= 0) return null;
+  return (ytd / mat) / (8 / 12);
+}
+
+export interface FragilityInputItem {
+  id?: string;
+  name?: string;
+  v2025: number;
+  v2026: number;
+  packCount: number;
+}
+
+export interface RevenueFragilityBreakdown {
+  totalValue26: number;
+  launchValue26: number;
+  launchSharePct: number;
+  launchCount: number;
+  singlePackValue26: number;
+  singlePackSharePct: number;
+  singlePackCount: number;
+  top3Value26: number;
+  top3SharePct: number;
+  top3Count: number;
+  otherValue26: number;
+  otherSharePct: number;
+  otherCount: number;
+  rawTop3SharePct: number;
+  rawSinglePackSharePct: number;
+}
+
+/**
+ * Decomposes 2026 scope revenue into 4 mutually exclusive segments with strict precedence:
+ *   1. 2026 New Launches (v2025 <= 0 && v2026 > 0)
+ *   2. Single-Pack Incumbents (not a launch, packCount === 1)
+ *   3. Top-3 Multi-Pack Incumbents (top 3 by v2026 among non-launch multi-pack brands)
+ *   4. All Other Brands
+ * Guarantees the 4 segments sum to 100% of totalValue26 without double-counting.
+ */
+export function computeRevenueFragilitySegments(
+  items: FragilityInputItem[]
+): RevenueFragilityBreakdown {
+  const active = items
+    .filter((x) => x.v2026 > 0)
+    .map((x, idx) => ({ ...x, _uid: x.id ?? `item_${idx}` }))
+    .sort((a, b) => b.v2026 - a.v2026);
+
+  const totalValue26 = active.reduce((s, x) => s + x.v2026, 0);
+  if (totalValue26 <= 0) {
+    return {
+      totalValue26: 0,
+      launchValue26: 0,
+      launchSharePct: 0,
+      launchCount: 0,
+      singlePackValue26: 0,
+      singlePackSharePct: 0,
+      singlePackCount: 0,
+      top3Value26: 0,
+      top3SharePct: 0,
+      top3Count: 0,
+      otherValue26: 0,
+      otherSharePct: 0,
+      otherCount: 0,
+      rawTop3SharePct: 0,
+      rawSinglePackSharePct: 0,
+    };
+  }
+
+  const rawTop3Val = active.slice(0, 3).reduce((s, x) => s + x.v2026, 0);
+  const rawSinglePackVal = active
+    .filter((x) => x.packCount === 1)
+    .reduce((s, x) => s + x.v2026, 0);
+
+  const top3MultiPackIds = new Set(
+    active
+      .filter((x) => !(x.v2025 <= 0 && x.v2026 > 0) && x.packCount > 1)
+      .slice(0, 3)
+      .map((x) => x._uid)
+  );
+
+  let launchValue26 = 0,
+    launchCount = 0;
+  let singlePackValue26 = 0,
+    singlePackCount = 0;
+  let top3Value26 = 0,
+    top3Count = 0;
+  let otherValue26 = 0,
+    otherCount = 0;
+
+  for (const item of active) {
+    const isLaunch = item.v2025 <= 0 && item.v2026 > 0;
+    if (isLaunch) {
+      launchValue26 += item.v2026;
+      launchCount++;
+    } else if (item.packCount === 1) {
+      singlePackValue26 += item.v2026;
+      singlePackCount++;
+    } else if (top3MultiPackIds.has(item._uid)) {
+      top3Value26 += item.v2026;
+      top3Count++;
+    } else {
+      otherValue26 += item.v2026;
+      otherCount++;
+    }
+  }
+
+  return {
+    totalValue26,
+    launchValue26,
+    launchSharePct: (launchValue26 / totalValue26) * 100,
+    launchCount,
+    singlePackValue26,
+    singlePackSharePct: (singlePackValue26 / totalValue26) * 100,
+    singlePackCount,
+    top3Value26,
+    top3SharePct: (top3Value26 / totalValue26) * 100,
+    top3Count,
+    otherValue26,
+    otherSharePct: (otherValue26 / totalValue26) * 100,
+    otherCount,
+    rawTop3SharePct: (rawTop3Val / totalValue26) * 100,
+    rawSinglePackSharePct: (rawSinglePackVal / totalValue26) * 100,
+  };
+}

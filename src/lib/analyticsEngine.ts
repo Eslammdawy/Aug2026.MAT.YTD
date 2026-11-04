@@ -8,7 +8,10 @@ import {
   calcHHI,
   calcMarketShare,
   calcPriceMixGrowth,
+  calcSeasonalityIndex,
+  computeRevenueFragilitySegments,
   type GrowthMetric,
+  type RevenueFragilityBreakdown,
   winsoriseForColorScale,
 } from './metrics';
 
@@ -59,6 +62,10 @@ export interface Atc4ConcentrationRow {
   atc1Name: string;
   v2026: number;
   growth26: GrowthMetric;
+  cagr24_26: GrowthMetric;
+  valueGrowth26: GrowthMetric;
+  unitsGrowth26: GrowthMetric;
+  avgPrice26: number | null;
   productCount: number;
   packCount: number;
   top5SharePct: number;
@@ -76,10 +83,30 @@ export interface PriceTierBucket {
   value26: number;
   units25: number;
   units26: number;
+  valueShare25: number;
   valueShare26: number;
+  unitsShare25: number;
   unitsShare26: number;
+  deltaValueSharePp: number;
+  deltaUnitsSharePp: number;
   valueGrowth26: GrowthMetric;
   unitsGrowth26: GrowthMetric;
+}
+
+export interface SeasonalityRow {
+  dimKey: 'atc4' | 'nfc1';
+  dictIdx: number;
+  name: string;
+  subtitle: string;
+  ytd25: number;
+  mat25: number;
+  ytd26: number;
+  mat26: number;
+  index25: number | null;
+  index26: number | null;
+  instabilitySwing: number | null;
+  isUnstable: boolean;
+  sepDecShare26: number | null;
 }
 
 export interface PackSizeBucket {
@@ -132,6 +159,9 @@ export interface ScopedAnalyticsBundle {
   priceTierMix: PriceTierBucket[];
   packSizeMix: PackSizeBucket[];
   packExtensions: PackExtensionSummary[];
+  seasonalityByAtc4: SeasonalityRow[];
+  seasonalityByNfc1: SeasonalityRow[];
+  revenueFragility: RevenueFragilityBreakdown;
   newProducts: TableNode[];
   discontinuedProducts: TableNode[];
   newPacks: TableNode[];
@@ -385,10 +415,14 @@ export function computeScopedAnalyticsBundle(
       const topProd = pList[0];
       return {
         atc4Idx: a.atc4Idx,
-        atc4Name: a.name,
+        atc4Name: a.atc4Name || a.name,
         atc1Name: a.atc1Name,
         v2026: a.v2026,
         growth26: a.growth26,
+        cagr24_26: a.cagr24_26,
+        valueGrowth26: a.valueGrowth26,
+        unitsGrowth26: a.unitsGrowth26,
+        avgPrice26: a.avgPrice26,
         productCount: pList.length,
         packCount: a.packCount || 0,
         top5SharePct: topNSharePct(vals, 5, a.v2026),
@@ -452,22 +486,34 @@ export function computeScopedAnalyticsBundle(
     sAcc.units26 += pk.units2026;
   }
 
+  const totalVal25 = scopeTotalNode.value2025;
   const totalVal26 = scopeTotalNode.value2026;
+  const totalUnits25 = scopeTotalNode.units2025;
   const totalUnits26 = scopeTotalNode.units2026;
 
-  const priceTierMix: PriceTierBucket[] = tierAccs.map((t) => ({
-    tier: t.tier,
-    rangeLabel: t.rangeLabel,
-    packCount: t.packCount,
-    value25: t.value25,
-    value26: t.value26,
-    units25: t.units25,
-    units26: t.units26,
-    valueShare26: totalVal26 > 0 ? t.value26 / totalVal26 : 0,
-    unitsShare26: totalUnits26 > 0 ? t.units26 / totalUnits26 : 0,
-    valueGrowth26: calcGrowth(t.value26, t.value25),
-    unitsGrowth26: calcGrowth(t.units26, t.units25),
-  }));
+  const priceTierMix: PriceTierBucket[] = tierAccs.map((t) => {
+    const valueShare25 = totalVal25 > 0 ? t.value25 / totalVal25 : 0;
+    const valueShare26 = totalVal26 > 0 ? t.value26 / totalVal26 : 0;
+    const unitsShare25 = totalUnits25 > 0 ? t.units25 / totalUnits25 : 0;
+    const unitsShare26 = totalUnits26 > 0 ? t.units26 / totalUnits26 : 0;
+    return {
+      tier: t.tier,
+      rangeLabel: t.rangeLabel,
+      packCount: t.packCount,
+      value25: t.value25,
+      value26: t.value26,
+      units25: t.units25,
+      units26: t.units26,
+      valueShare25,
+      valueShare26,
+      unitsShare25,
+      unitsShare26,
+      deltaValueSharePp: (valueShare26 - valueShare25) * 100,
+      deltaUnitsSharePp: (unitsShare26 - unitsShare25) * 100,
+      valueGrowth26: calcGrowth(t.value26, t.value25),
+      unitsGrowth26: calcGrowth(t.units26, t.units25),
+    };
+  });
 
   const packSizeMix: PackSizeBucket[] = sizeOrder.map((bucket) => {
     const s = sizeAccMap.get(bucket)!;
@@ -592,6 +638,20 @@ export function computeScopedAnalyticsBundle(
     );
   }
 
+  const seasonalityByAtc4 = computeSeasonalityIndex(indexed, filterState, measure, 'atc4');
+  const seasonalityByNfc1 = computeSeasonalityIndex(indexed, filterState, measure, 'nfc1');
+
+  const fragilityCandidates = productNodes.length === 1 ? packNodes : productNodes;
+  const revenueFragility = computeRevenueFragilitySegments(
+    fragilityCandidates.map((n) => ({
+      id: n.id,
+      name: n.name,
+      v2025: n.v2025,
+      v2026: n.v2026,
+      packCount: productNodes.length === 1 ? 1 : (n.packCount || 1),
+    }))
+  );
+
   return {
     executive: {
       mat: matSummary,
@@ -617,11 +677,84 @@ export function computeScopedAnalyticsBundle(
     priceTierMix,
     packSizeMix,
     packExtensions,
+    seasonalityByAtc4,
+    seasonalityByNfc1,
+    revenueFragility,
     newProducts,
     discontinuedProducts,
     newPacks,
     discontinuedPacks,
   };
+}
+
+export function computeSeasonalityIndex(
+  indexed: IndexedMarketData,
+  filterState: FacetedFilterStateResult,
+  measure: MeasureType,
+  dimKey: 'atc4' | 'nfc1'
+): SeasonalityRow[] {
+  const { dicts } = indexed.dataset;
+  const ytdIdx25 = measure === 'value' ? 11 : 8;
+  const ytdIdx26 = measure === 'value' ? 12 : 9;
+  const matIdx25 = measure === 'value' ? 17 : 14;
+  const matIdx26 = measure === 'value' ? 18 : 15;
+
+  const accMap = new Map<
+    number,
+    { atc1Idx: number; ytd25: number; mat25: number; ytd26: number; mat26: number }
+  >();
+
+  for (const r of filterState.scopeRows) {
+    const dictIdx = dimKey === 'atc4' ? r[3] : r[4];
+    if (dictIdx < 0) continue;
+    let acc = accMap.get(dictIdx);
+    if (!acc) {
+      acc = { atc1Idx: r[2], ytd25: 0, mat25: 0, ytd26: 0, mat26: 0 };
+      accMap.set(dictIdx, acc);
+    }
+    acc.ytd25 += r[ytdIdx25];
+    acc.mat25 += r[matIdx25];
+    acc.ytd26 += r[ytdIdx26];
+    acc.mat26 += r[matIdx26];
+  }
+
+  const rows: SeasonalityRow[] = [];
+  for (const [dictIdx, acc] of accMap.entries()) {
+    if (acc.mat26 <= 0 && acc.mat25 <= 0) continue;
+    const name =
+      dimKey === 'atc4'
+        ? dicts.atc4[dictIdx] || 'Unknown'
+        : dicts.nfc1[dictIdx] || 'Unknown';
+    const subtitle =
+      dimKey === 'atc4' ? dicts.atc1[acc.atc1Idx] || '' : 'Dosage Form';
+    const index25 = calcSeasonalityIndex(acc.ytd25, acc.mat25);
+    const index26 = calcSeasonalityIndex(acc.ytd26, acc.mat26);
+    const instabilitySwing =
+      index26 !== null && index25 !== null ? index26 - index25 : null;
+    const isUnstable =
+      instabilitySwing !== null && Math.abs(instabilitySwing) > 0.15;
+    const sepDecShare26 =
+      acc.mat26 > 0 ? Math.max(0, (acc.mat26 - acc.ytd26) / acc.mat26) : null;
+
+    rows.push({
+      dimKey,
+      dictIdx,
+      name,
+      subtitle,
+      ytd25: acc.ytd25,
+      mat25: acc.mat25,
+      ytd26: acc.ytd26,
+      mat26: acc.mat26,
+      index25,
+      index26,
+      instabilitySwing,
+      isUnstable,
+      sepDecShare26,
+    });
+  }
+
+  rows.sort((a, b) => b.mat26 - a.mat26);
+  return rows;
 }
 
 export { winsoriseForColorScale };

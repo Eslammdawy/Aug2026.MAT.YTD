@@ -78,9 +78,11 @@ export interface TableNode {
   growth25: GrowthMetric;
   growth26: GrowthMetric;
   cagr24_26: GrowthMetric;
-  // Dual Value & Units growth for active period
+  // Dual Value & Units growth & CAGR for active period
   valueGrowth26: GrowthMetric;
   unitsGrowth26: GrowthMetric;
+  valueCagr24_26: GrowthMetric;
+  unitsCagr24_26: GrowthMetric;
   // Absolute & contribution
   absGrowth26: number;
   contribGrowthPp: number | null;
@@ -88,12 +90,15 @@ export interface TableNode {
   share24: number | null;
   share25: number | null;
   share26: number | null;
+  totalMarketShare25: number | null;
   totalMarketShare26: number | null;
+  deltaTotalShare26_25Pp: number | null;
   parentShare26: number | null;
   deltaShare26_25Pp: number | null;
   deltaShare25_24Pp: number | null;
   relShareChange26_25: number | null;
   // Indices & Price/Mix & Momentum
+  evolutionIndex25: number | null;
   evolutionIndex26: number | null;
   avgPrice24: number | null;
   avgPrice25: number | null;
@@ -101,6 +106,8 @@ export interface TableNode {
   priceMixGrowth26: number | null;
   momentum26: number | null;
   rank: number | null;
+  rank24: number | null;
+  rank25: number | null;
   children?: TableNode[];
   packCount?: number;
 }
@@ -226,6 +233,8 @@ function finalizeNodeFromAcc(
 
   const valueGrowth26 = calcGrowth(value2026, value2025);
   const unitsGrowth26 = calcGrowth(units2026, units2025);
+  const valueCagr24_26 = calcCagr24To26(value2026, value2024);
+  const unitsCagr24_26 = calcCagr24To26(units2026, units2024);
 
   const absGrowth26 = calcAbsoluteGrowth(v2026, v2025);
   const scope24 = scopeTotals[activeOffset];
@@ -238,7 +247,9 @@ function finalizeNodeFromAcc(
   const share25 = calcMarketShare(v2025, scope25);
   const share26 = calcMarketShare(v2026, scope26);
 
+  const totalMarketShare25 = calcMarketShare(v2025, grandTotals[activeOffset + 1]);
   const totalMarketShare26 = calcMarketShare(v2026, grandTotals[activeOffset + 2]);
+  const deltaTotalShare26_25Pp = calcDeltaSharePp(totalMarketShare26, totalMarketShare25);
   const parentShare26 = parentTotals
     ? calcMarketShare(v2026, parentTotals[activeOffset + 2])
     : share26;
@@ -247,7 +258,9 @@ function finalizeNodeFromAcc(
   const deltaShare25_24Pp = calcDeltaSharePp(share25, share24);
   const relShareChange26_25 = calcRelativeShareChange(share26, share25);
 
+  const scopeGrowth25 = calcGrowth(scope25, scope24);
   const scopeGrowth26 = calcGrowth(scope26, scope25);
+  const evolutionIndex25 = calcEvolutionIndex(growth25.raw, scopeGrowth25.raw);
   const evolutionIndex26 = calcEvolutionIndex(growth26.raw, scopeGrowth26.raw);
 
   const avgPrice24 = calcAveragePrice(value2024, units2024);
@@ -295,16 +308,21 @@ function finalizeNodeFromAcc(
     cagr24_26,
     valueGrowth26,
     unitsGrowth26,
+    valueCagr24_26,
+    unitsCagr24_26,
     absGrowth26,
     contribGrowthPp,
     share24,
     share25,
     share26,
+    totalMarketShare25,
     totalMarketShare26,
+    deltaTotalShare26_25Pp,
     parentShare26,
     deltaShare26_25Pp,
     deltaShare25_24Pp,
     relShareChange26_25,
+    evolutionIndex25,
     evolutionIndex26,
     avgPrice24,
     avgPrice25,
@@ -312,6 +330,8 @@ function finalizeNodeFromAcc(
     priceMixGrowth26,
     momentum26,
     rank: null,
+    rank24: null,
+    rank25: null,
     packCount: acc.packSet.size > 0 ? acc.packSet.size : undefined,
   };
 
@@ -330,9 +350,13 @@ function finalizeNodeFromAcc(
       )
     );
     // Assign competition ranks among siblings
-    const childRanks = computeScopeRanks(children.map((c) => c.v2026));
+    const childRanks24 = computeScopeRanks(children.map((c) => c.v2024));
+    const childRanks25 = computeScopeRanks(children.map((c) => c.v2025));
+    const childRanks26 = computeScopeRanks(children.map((c) => c.v2026));
     for (let i = 0; i < children.length; i++) {
-      children[i].rank = childRanks[i];
+      children[i].rank24 = childRanks24[i];
+      children[i].rank25 = childRanks25[i];
+      children[i].rank = childRanks26[i];
     }
     children.sort((a, b) => b.v2026 - a.v2026);
     node.children = children;
@@ -565,10 +589,14 @@ export function buildTableViewData(
     finalizeNodeFromAcc(acc, indexed, period, measure, scopeAcc.m, grandTotals, scopeAcc.m, 0)
   );
 
-  // Assign top-level competition ranks
-  const topRanks = computeScopeRanks(nodes.map((n) => n.v2026));
+  // Assign top-level competition ranks for 2024, 2025, and 2026
+  const topRanks24 = computeScopeRanks(nodes.map((n) => n.v2024));
+  const topRanks25 = computeScopeRanks(nodes.map((n) => n.v2025));
+  const topRanks26 = computeScopeRanks(nodes.map((n) => n.v2026));
   for (let i = 0; i < nodes.length; i++) {
-    nodes[i].rank = topRanks[i];
+    nodes[i].rank24 = topRanks24[i];
+    nodes[i].rank25 = topRanks25[i];
+    nodes[i].rank = topRanks26[i];
   }
   nodes.sort((a, b) => b.v2026 - a.v2026);
 

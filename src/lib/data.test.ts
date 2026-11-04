@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { MarketDatasetJSON } from '../types/market';
 import { buildTableViewData } from './aggregationEngine';
+import { computeScopedAnalyticsBundle } from './analyticsEngine';
 import {
   buildIndexedMarketData,
   computeFacetedFilterState,
@@ -159,5 +160,31 @@ describe('IQVIA Egypt Market Dataset & Interlinked Filter Engine Verification', 
       pack: [packIdx],
     });
     expect(statePack.scopeAggregationLevel).toBe('Pack');
+  });
+
+  it('computes ScopedAnalyticsBundle including seasonality, revenue fragility, evolutionIndex25, and rank24/25', () => {
+    const state = computeFacetedFilterState(indexed, EMPTY_SELECTIONS, 'mat', 'value');
+    const bundle = computeScopedAnalyticsBundle(indexed, state, 'mat', 'value');
+
+    expect(bundle.seasonalityByAtc4.length).toBeGreaterThan(100);
+    expect(bundle.seasonalityByNfc1.length).toBe(16);
+
+    const fragSum =
+      bundle.revenueFragility.top3SharePct +
+      bundle.revenueFragility.singlePackSharePct +
+      bundle.revenueFragility.launchSharePct +
+      bundle.revenueFragility.otherSharePct;
+    expect(fragSum).toBeCloseTo(100.0, 4);
+
+    const topProduct = bundle.productNodes[0];
+    expect(topProduct.rank).toBe(1);
+    expect(topProduct.rank25).not.toBeNull();
+
+    const incumbentProduct = bundle.productNodes.find((p) => p.v2024 > 0 && p.v2025 > 0)!;
+    expect(incumbentProduct).toBeDefined();
+    expect(incumbentProduct.rank24).not.toBeNull();
+    expect(incumbentProduct.rank25).not.toBeNull();
+    expect(incumbentProduct.evolutionIndex25).not.toBeNull();
+    expect(incumbentProduct.valueCagr24_26.status).not.toBe('null');
   });
 });

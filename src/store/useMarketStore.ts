@@ -22,6 +22,27 @@ export interface PruneNotice {
   timestamp: number;
 }
 
+export interface SavedViewPreset {
+  id: string;
+  name: string;
+  createdAt: number;
+  period: PeriodType;
+  measure: MeasureType;
+  activeTab: ActiveTab;
+  groupBy: GroupByMode;
+  shareBasis: ShareBasis;
+  selections: FilterSelections;
+}
+
+export interface StoryPresetInput {
+  period?: PeriodType;
+  measure?: MeasureType;
+  activeTab?: ActiveTab;
+  groupBy?: GroupByMode;
+  shareBasis?: ShareBasis;
+  selections?: FilterSelections;
+}
+
 interface MarketStoreState {
   indexed: IndexedMarketData | null;
   loading: boolean;
@@ -42,6 +63,9 @@ interface MarketStoreState {
   theme: 'dark' | 'light';
   pruneNotice: PruneNotice | null;
 
+  // Saved Views / Watchlists (UX-2)
+  savedViews: SavedViewPreset[];
+
   // Actions
   loadDataset: () => Promise<void>;
   setPeriod: (period: PeriodType) => void;
@@ -61,6 +85,13 @@ interface MarketStoreState {
   clearDimension: (dim: DimensionKey) => void;
   resetAllFilters: () => void;
   drillToProductsInTable: (dim: DimensionKey, idx: number) => void;
+
+  // Watchlist & Story preset actions
+  saveCurrentView: (name: string) => SavedViewPreset | null;
+  applySavedView: (id: string) => void;
+  renameSavedView: (id: string, name: string) => void;
+  deleteSavedView: (id: string) => void;
+  applyPresetState: (preset: StoryPresetInput) => void;
 }
 
 const EMPTY_SELECTIONS: FilterSelections = {
@@ -82,10 +113,60 @@ function parseIntList(param: string | null, maxLen: number): number[] {
 function readInitialTheme(): 'dark' | 'light' {
   if (typeof window === 'undefined') return 'light';
   try {
-    const stored = localStorage.getItem('iqvia_theme');
+    const stored =
+      localStorage.getItem('iqvia_theme') || localStorage.getItem('hpg-theme');
     if (stored === 'dark' || stored === 'light') return stored;
   } catch {}
   return 'light';
+}
+
+const SAVED_VIEWS_STORAGE_KEY = 'iqvia_saved_views';
+
+function readSavedViews(): SavedViewPreset[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(SAVED_VIEWS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed as SavedViewPreset[];
+  } catch {}
+  return [];
+}
+
+function persistSavedViews(views: SavedViewPreset[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SAVED_VIEWS_STORAGE_KEY, JSON.stringify(views));
+  } catch {}
+}
+
+export function buildShareUrlForPreset(state: {
+  period: PeriodType;
+  measure: MeasureType;
+  activeTab: ActiveTab;
+  groupBy: GroupByMode;
+  shareBasis: ShareBasis;
+  tableSearch?: string;
+  selections: FilterSelections;
+}): string {
+  const params = new URLSearchParams();
+  params.set('period', state.period);
+  params.set('measure', state.measure);
+  if (state.activeTab !== 'structure') params.set('tab', state.activeTab);
+  if (state.groupBy !== 'tree_product_pack') params.set('groupBy', state.groupBy);
+  if (state.shareBasis !== 'scope') params.set('shareBasis', state.shareBasis);
+  if (state.tableSearch?.trim()) params.set('q', state.tableSearch.trim());
+
+  for (const dim of DIMENSION_KEYS) {
+    if (state.selections[dim].length > 0) {
+      params.set(dim, state.selections[dim].join(','));
+    }
+  }
+
+  if (typeof window === 'undefined') {
+    return `?${params.toString()}`;
+  }
+  return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
 }
 
 function readInitialUrlParams() {
@@ -93,7 +174,7 @@ function readInitialUrlParams() {
     return {
       period: 'mat' as PeriodType,
       measure: 'value' as MeasureType,
-      activeTab: 'share' as ActiveTab,
+      activeTab: 'structure' as ActiveTab,
       groupBy: 'tree_product_pack' as GroupByMode,
       shareBasis: 'scope' as ShareBasis,
       tableSearch: '',
@@ -109,10 +190,10 @@ function readInitialUrlParams() {
 
   const period: PeriodType = p === 'ytd' ? 'ytd' : 'mat';
   const measure: MeasureType = m === 'units' ? 'units' : 'value';
-  const validTabs: ActiveTab[] = ['share', 'portfolio', 'structure'];
+  const validTabs: ActiveTab[] = ['structure', 'growth', 'share', 'portfolio'];
   const activeTab: ActiveTab = validTabs.includes(tab as ActiveTab)
     ? (tab as ActiveTab)
-    : 'share';
+    : 'structure';
 
   const validGroupBys: GroupByMode[] = [
     'tree_product_pack',
@@ -148,7 +229,7 @@ function syncStateToUrl(state: {
   const params = new URLSearchParams();
   params.set('period', state.period);
   params.set('measure', state.measure);
-  if (state.activeTab !== 'share') params.set('tab', state.activeTab);
+  if (state.activeTab !== 'structure') params.set('tab', state.activeTab);
   if (state.groupBy !== 'tree_product_pack') params.set('groupBy', state.groupBy);
   if (state.shareBasis !== 'scope') params.set('shareBasis', state.shareBasis);
   if (state.tableSearch.trim()) params.set('q', state.tableSearch.trim());
@@ -182,6 +263,7 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
   optionMetricDisplay: 'value',
   theme: readInitialTheme(),
   pruneNotice: null,
+  savedViews: readSavedViews(),
 
   loadDataset: async () => {
     set({ loading: true, error: null });
@@ -273,6 +355,7 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
       document.documentElement.classList.toggle('dark', next === 'dark');
       try {
         localStorage.setItem('iqvia_theme', next);
+        localStorage.setItem('hpg-theme', next);
       } catch {}
     }
     set({ theme: next });
@@ -393,5 +476,125 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
         .getElementById('explorer-table-section')
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  },
+
+  saveCurrentView: (name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return null;
+    const state = get();
+    const newPreset: SavedViewPreset = {
+      id: `view_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      name: trimmed,
+      createdAt: Date.now(),
+      period: state.period,
+      measure: state.measure,
+      activeTab: state.activeTab,
+      groupBy: state.groupBy,
+      shareBasis: state.shareBasis,
+      selections: {
+        atc1: [...state.selections.atc1],
+        atc4: [...state.selections.atc4],
+        nfc1: [...state.selections.nfc1],
+        product: [...state.selections.product],
+        pack: [...state.selections.pack],
+      },
+    };
+    const nextViews = [newPreset, ...state.savedViews];
+    persistSavedViews(nextViews);
+    set({ savedViews: nextViews });
+    return newPreset;
+  },
+
+  applySavedView: (id) => {
+    const state = get();
+    const preset = state.savedViews.find((v) => v.id === id);
+    if (!preset) return;
+    let nextSelections = {
+      atc1: [...preset.selections.atc1],
+      atc4: [...preset.selections.atc4],
+      nfc1: [...preset.selections.nfc1],
+      product: [...preset.selections.product],
+      pack: [...preset.selections.pack],
+    };
+    if (state.indexed) {
+      const sanitized = sanitizeAndPruneSelections(state.indexed, nextSelections);
+      nextSelections = sanitized.selections;
+    }
+    set({
+      period: preset.period,
+      measure: preset.measure,
+      activeTab: preset.activeTab,
+      groupBy: preset.groupBy,
+      shareBasis: preset.shareBasis,
+      selections: nextSelections,
+      pruneNotice: null,
+    });
+    syncStateToUrl({
+      ...get(),
+      period: preset.period,
+      measure: preset.measure,
+      activeTab: preset.activeTab,
+      groupBy: preset.groupBy,
+      shareBasis: preset.shareBasis,
+      selections: nextSelections,
+    });
+  },
+
+  renameSavedView: (id, name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const state = get();
+    const nextViews = state.savedViews.map((v) =>
+      v.id === id ? { ...v, name: trimmed } : v
+    );
+    persistSavedViews(nextViews);
+    set({ savedViews: nextViews });
+  },
+
+  deleteSavedView: (id) => {
+    const state = get();
+    const nextViews = state.savedViews.filter((v) => v.id !== id);
+    persistSavedViews(nextViews);
+    set({ savedViews: nextViews });
+  },
+
+  applyPresetState: (preset) => {
+    const state = get();
+    const period = preset.period ?? state.period;
+    const measure = preset.measure ?? state.measure;
+    const activeTab = preset.activeTab ?? state.activeTab;
+    const groupBy = preset.groupBy ?? state.groupBy;
+    const shareBasis = preset.shareBasis ?? state.shareBasis;
+    let nextSelections = preset.selections
+      ? {
+          atc1: [...preset.selections.atc1],
+          atc4: [...preset.selections.atc4],
+          nfc1: [...preset.selections.nfc1],
+          product: [...preset.selections.product],
+          pack: [...preset.selections.pack],
+        }
+      : state.selections;
+    if (state.indexed && preset.selections) {
+      const sanitized = sanitizeAndPruneSelections(state.indexed, nextSelections);
+      nextSelections = sanitized.selections;
+    }
+    set({
+      period,
+      measure,
+      activeTab,
+      groupBy,
+      shareBasis,
+      selections: nextSelections,
+      pruneNotice: null,
+    });
+    syncStateToUrl({
+      ...get(),
+      period,
+      measure,
+      activeTab,
+      groupBy,
+      shareBasis,
+      selections: nextSelections,
+    });
   },
 }));

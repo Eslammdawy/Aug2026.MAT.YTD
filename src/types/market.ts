@@ -18,6 +18,7 @@ export type ShareBasis = 'scope' | 'parent' | 'total';
 
 export type ActiveTab =
   | 'structure'
+  | 'growth'
   | 'share'
   | 'portfolio';
 

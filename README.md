@@ -127,3 +127,5 @@ npm run build
 5. **Extreme Growth Capping (`+999.0%+`) & Winsorisation**:
    - Displayed growth values exceeding `+999.0%` (`9.99` in decimal) are capped at `+999.0%+` and flagged with an indicator icon (`1,079` source rows exceed `+1000%` in MAT Aug 2026 LC Value).
    - Winsorisation is applied strictly to chart colour scales and scatter bounds, never to totals or table values.
+#   A u g 2 0 2 6 . M A T . Y T D  
+ 

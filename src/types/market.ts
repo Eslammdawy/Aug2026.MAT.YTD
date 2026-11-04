@@ -16,12 +16,6 @@ export type GroupByMode =
 
 export type ShareBasis = 'scope' | 'parent' | 'total';
 
-export type ActiveTab =
-  | 'structure'
-  | 'growth'
-  | 'share'
-  | 'portfolio';
-
 /**
  * Tuple representation of a source or pre-aggregated row in compact JSON:
  * [

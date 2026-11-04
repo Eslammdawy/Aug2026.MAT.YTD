@@ -8,7 +8,6 @@ import {
   Link2,
   Moon,
   Package,
-  Play,
   Plus,
   Printer,
   Share2,
@@ -18,15 +17,7 @@ import {
 import hpgLogo from '../../HPG logo.jpg';
 import { buildShareUrlForPreset, useMarketStore } from '../store/useMarketStore';
 
-interface HeaderBarProps {
-  storyModeActive?: boolean;
-  onToggleStoryMode?: () => void;
-}
-
-export const HeaderBar: React.FC<HeaderBarProps> = ({
-  storyModeActive = false,
-  onToggleStoryMode,
-}) => {
+export const HeaderBar: React.FC = () => {
   const {
     indexed,
     period,
@@ -282,7 +273,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                               {v.name}
                             </div>
                             <div className="text-[10px] font-mono text-slate-400 truncate">
-                              {v.period.toUpperCase()} • {v.measure.toUpperCase()} • Tab: {v.activeTab}
+                              {v.period.toUpperCase()} • {v.measure.toUpperCase()}
                             </div>
                           </button>
                         )}
@@ -327,23 +318,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
               </div>
             )}
           </div>
-
-          {/* UX-3: Guided Story Mode Button */}
-          {onToggleStoryMode && (
-            <button
-              type="button"
-              onClick={onToggleStoryMode}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                storyModeActive
-                  ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-amber-500/50'
-              }`}
-              title="Launch 6-step Guided Executive Market Walkthrough"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span className="hidden sm:inline">Story</span>
-            </button>
-          )}
 
           {/* UX-4: Print-Friendly Executive Brief Button */}
           <button

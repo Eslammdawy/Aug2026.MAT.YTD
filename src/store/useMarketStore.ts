@@ -7,7 +7,6 @@ import {
   sanitizeAndPruneSelections,
 } from '../lib/filterEngine';
 import type {
-  ActiveTab,
   DimensionKey,
   GroupByMode,
   MarketDatasetJSON,
@@ -28,19 +27,9 @@ export interface SavedViewPreset {
   createdAt: number;
   period: PeriodType;
   measure: MeasureType;
-  activeTab: ActiveTab;
   groupBy: GroupByMode;
   shareBasis: ShareBasis;
   selections: FilterSelections;
-}
-
-export interface StoryPresetInput {
-  period?: PeriodType;
-  measure?: MeasureType;
-  activeTab?: ActiveTab;
-  groupBy?: GroupByMode;
-  shareBasis?: ShareBasis;
-  selections?: FilterSelections;
 }
 
 interface MarketStoreState {
@@ -51,7 +40,6 @@ interface MarketStoreState {
   // Core view state (persisted in URL)
   period: PeriodType;
   measure: MeasureType;
-  activeTab: ActiveTab;
   groupBy: GroupByMode;
   shareBasis: ShareBasis;
   tableSearch: string;
@@ -70,7 +58,6 @@ interface MarketStoreState {
   loadDataset: () => Promise<void>;
   setPeriod: (period: PeriodType) => void;
   setMeasure: (measure: MeasureType) => void;
-  setActiveTab: (tab: ActiveTab) => void;
   setGroupBy: (groupBy: GroupByMode) => void;
   setShareBasis: (basis: ShareBasis) => void;
   setTableSearch: (search: string) => void;
@@ -86,12 +73,11 @@ interface MarketStoreState {
   resetAllFilters: () => void;
   drillToProductsInTable: (dim: DimensionKey, idx: number) => void;
 
-  // Watchlist & Story preset actions
+  // Watchlist preset actions
   saveCurrentView: (name: string) => SavedViewPreset | null;
   applySavedView: (id: string) => void;
   renameSavedView: (id: string, name: string) => void;
   deleteSavedView: (id: string) => void;
-  applyPresetState: (preset: StoryPresetInput) => void;
 }
 
 const EMPTY_SELECTIONS: FilterSelections = {
@@ -143,7 +129,6 @@ function persistSavedViews(views: SavedViewPreset[]) {
 export function buildShareUrlForPreset(state: {
   period: PeriodType;
   measure: MeasureType;
-  activeTab: ActiveTab;
   groupBy: GroupByMode;
   shareBasis: ShareBasis;
   tableSearch?: string;
@@ -152,7 +137,6 @@ export function buildShareUrlForPreset(state: {
   const params = new URLSearchParams();
   params.set('period', state.period);
   params.set('measure', state.measure);
-  if (state.activeTab !== 'structure') params.set('tab', state.activeTab);
   if (state.groupBy !== 'tree_product_pack') params.set('groupBy', state.groupBy);
   if (state.shareBasis !== 'scope') params.set('shareBasis', state.shareBasis);
   if (state.tableSearch?.trim()) params.set('q', state.tableSearch.trim());
@@ -174,7 +158,6 @@ function readInitialUrlParams() {
     return {
       period: 'mat' as PeriodType,
       measure: 'value' as MeasureType,
-      activeTab: 'structure' as ActiveTab,
       groupBy: 'tree_product_pack' as GroupByMode,
       shareBasis: 'scope' as ShareBasis,
       tableSearch: '',
@@ -183,17 +166,12 @@ function readInitialUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const p = params.get('period');
   const m = params.get('measure');
-  const tab = params.get('tab');
   const gb = params.get('groupBy');
   const sb = params.get('shareBasis');
   const q = params.get('q') || '';
 
   const period: PeriodType = p === 'ytd' ? 'ytd' : 'mat';
   const measure: MeasureType = m === 'units' ? 'units' : 'value';
-  const validTabs: ActiveTab[] = ['structure', 'growth', 'share', 'portfolio'];
-  const activeTab: ActiveTab = validTabs.includes(tab as ActiveTab)
-    ? (tab as ActiveTab)
-    : 'structure';
 
   const validGroupBys: GroupByMode[] = [
     'tree_product_pack',
@@ -213,13 +191,12 @@ function readInitialUrlParams() {
     ? (sb as ShareBasis)
     : 'scope';
 
-  return { period, measure, activeTab, groupBy, shareBasis, tableSearch: q };
+  return { period, measure, groupBy, shareBasis, tableSearch: q };
 }
 
 function syncStateToUrl(state: {
   period: PeriodType;
   measure: MeasureType;
-  activeTab: ActiveTab;
   groupBy: GroupByMode;
   shareBasis: ShareBasis;
   tableSearch: string;
@@ -229,7 +206,6 @@ function syncStateToUrl(state: {
   const params = new URLSearchParams();
   params.set('period', state.period);
   params.set('measure', state.measure);
-  if (state.activeTab !== 'structure') params.set('tab', state.activeTab);
   if (state.groupBy !== 'tree_product_pack') params.set('groupBy', state.groupBy);
   if (state.shareBasis !== 'scope') params.set('shareBasis', state.shareBasis);
   if (state.tableSearch.trim()) params.set('q', state.tableSearch.trim());
@@ -253,7 +229,6 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
 
   period: initParams.period,
   measure: initParams.measure,
-  activeTab: initParams.activeTab,
   groupBy: initParams.groupBy,
   shareBasis: initParams.shareBasis,
   tableSearch: initParams.tableSearch,
@@ -319,11 +294,6 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
   setMeasure: (measure) => {
     set({ measure });
     syncStateToUrl({ ...get(), measure });
-  },
-
-  setActiveTab: (activeTab) => {
-    set({ activeTab });
-    syncStateToUrl({ ...get(), activeTab });
   },
 
   setGroupBy: (groupBy) => {
@@ -488,7 +458,6 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
       createdAt: Date.now(),
       period: state.period,
       measure: state.measure,
-      activeTab: state.activeTab,
       groupBy: state.groupBy,
       shareBasis: state.shareBasis,
       selections: {
@@ -523,7 +492,6 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
     set({
       period: preset.period,
       measure: preset.measure,
-      activeTab: preset.activeTab,
       groupBy: preset.groupBy,
       shareBasis: preset.shareBasis,
       selections: nextSelections,
@@ -533,7 +501,6 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
       ...get(),
       period: preset.period,
       measure: preset.measure,
-      activeTab: preset.activeTab,
       groupBy: preset.groupBy,
       shareBasis: preset.shareBasis,
       selections: nextSelections,
@@ -556,45 +523,5 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
     const nextViews = state.savedViews.filter((v) => v.id !== id);
     persistSavedViews(nextViews);
     set({ savedViews: nextViews });
-  },
-
-  applyPresetState: (preset) => {
-    const state = get();
-    const period = preset.period ?? state.period;
-    const measure = preset.measure ?? state.measure;
-    const activeTab = preset.activeTab ?? state.activeTab;
-    const groupBy = preset.groupBy ?? state.groupBy;
-    const shareBasis = preset.shareBasis ?? state.shareBasis;
-    let nextSelections = preset.selections
-      ? {
-          atc1: [...preset.selections.atc1],
-          atc4: [...preset.selections.atc4],
-          nfc1: [...preset.selections.nfc1],
-          product: [...preset.selections.product],
-          pack: [...preset.selections.pack],
-        }
-      : state.selections;
-    if (state.indexed && preset.selections) {
-      const sanitized = sanitizeAndPruneSelections(state.indexed, nextSelections);
-      nextSelections = sanitized.selections;
-    }
-    set({
-      period,
-      measure,
-      activeTab,
-      groupBy,
-      shareBasis,
-      selections: nextSelections,
-      pruneNotice: null,
-    });
-    syncStateToUrl({
-      ...get(),
-      period,
-      measure,
-      activeTab,
-      groupBy,
-      shareBasis,
-      selections: nextSelections,
-    });
   },
 }));

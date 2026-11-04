@@ -67,7 +67,7 @@ export const ExecutiveSummaryBanner: React.FC<ExecutiveSummaryBannerProps> = ({
 }) => {
   const { period, selections, indexed } = useMarketStore();
 
-  const [isInsightsOpen, setIsInsightsOpen] = useState(false);
+  const [isInsightsOpen, setIsInsightsOpen] = useState(true);
   const [pinnedSnapshot, setPinnedSnapshot] = useState<PinnedSnapshot | null>(null);
 
   const hasActiveFilters =

@@ -22,13 +22,16 @@ import {
   Download,
   Filter,
   FolderTree,
-  Info,
   Layers,
   Search,
   Sparkles,
   X,
 } from 'lucide-react';
-import type { TableNode, TableViewData } from '../lib/aggregationEngine';
+import {
+  computeDisplayedSubsetTotalNode,
+  type TableNode,
+  type TableViewData,
+} from '../lib/aggregationEngine';
 import {
   formatCompactValue,
   formatDecimalPct,
@@ -260,6 +263,7 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
     { id: 'v2026', desc: true },
   ]);
   const [expanded, setExpanded] = useState<ExpandedState>({});
+  const [rankLimit, setRankLimit] = useState<'all' | 20 | 10 | 5>('all');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     readInitialColumnVisibility
   );
@@ -679,7 +683,46 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
     getExpandedRowModel: getExpandedRowModel(),
   });
 
-  const { rows: tableRows } = table.getRowModel();
+  const sortedTopRows = table.getSortedRowModel().rows;
+
+  const displayedTopRows = useMemo(() => {
+    if (rankLimit === 'all') return sortedTopRows;
+    return sortedTopRows.slice(0, rankLimit);
+  }, [sortedTopRows, rankLimit]);
+
+  const tableRows = useMemo(() => {
+    const flat: typeof sortedTopRows = [];
+    const walk = (rows: typeof sortedTopRows) => {
+      for (const r of rows) {
+        flat.push(r);
+        if (r.getIsExpanded() && r.subRows && r.subRows.length > 0) {
+          walk(r.subRows);
+        }
+      }
+    };
+    walk(displayedTopRows);
+    return flat;
+  }, [displayedTopRows, expanded]);
+
+  const tot = useMemo(
+    () =>
+      computeDisplayedSubsetTotalNode(
+        displayedTopRows.map((r) => r.original),
+        tableData.totalNode,
+        tableData.nodes.length
+      ),
+    [displayedTopRows, tableData.totalNode, tableData.nodes.length]
+  );
+
+  const isSubsetTotal =
+    rankLimit !== 'all' || Boolean(tableSearch.trim());
+
+  const totalRowLabel =
+    rankLimit !== 'all'
+      ? `Top ${displayedTopRows.length.toLocaleString()} Total (${displayedTopRows.length.toLocaleString()} top items)`
+      : isSubsetTotal
+      ? `Filtered Total (${displayedTopRows.length.toLocaleString()} top items)`
+      : `Filtered Scope Total (${displayedTopRows.length.toLocaleString()} top items)`;
 
   const rowVirtualizer = useVirtualizer({
     count: tableRows.length,
@@ -723,64 +766,67 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
       return `"${str}"`;
     };
 
+    const formatNodeCsvLine = (n: TableNode, nameOverride?: string, levelOverride?: string) =>
+      [
+        esc(levelOverride ?? n.level),
+        esc(nameOverride ?? n.name),
+        esc(n.atc1Name),
+        esc(n.atc4Name),
+        esc(n.nfc1Name),
+        esc(n.productName),
+        esc(n.packName),
+        n.rank ?? '',
+        n.v2024.toFixed(2),
+        n.v2025.toFixed(2),
+        n.v2026.toFixed(2),
+        n.growth24Source.isNew
+          ? 'New'
+          : n.growth24Source.raw !== null
+          ? (n.growth24Source.raw * 100).toFixed(2)
+          : '',
+        n.growth25.isNew
+          ? 'New'
+          : n.growth25.raw !== null
+          ? (n.growth25.raw * 100).toFixed(2)
+          : '',
+        n.growth26.isNew
+          ? 'New'
+          : n.growth26.raw !== null
+          ? (n.growth26.raw * 100).toFixed(2)
+          : '',
+        n.cagr24_26.raw !== null ? (n.cagr24_26.raw * 100).toFixed(2) : '',
+        n.share24 !== null ? (n.share24 * 100).toFixed(4) : '',
+        n.share25 !== null ? (n.share25 * 100).toFixed(4) : '',
+        n.share26 !== null ? (n.share26 * 100).toFixed(4) : '',
+        n.totalMarketShare26 !== null
+          ? (n.totalMarketShare26 * 100).toFixed(4)
+          : '',
+        n.deltaShare26_25Pp !== null ? n.deltaShare26_25Pp.toFixed(3) : '',
+        n.evolutionIndex26 !== null ? n.evolutionIndex26.toFixed(2) : '',
+        n.avgPrice26 !== null ? n.avgPrice26.toFixed(2) : '',
+        n.priceMixGrowth26 !== null
+          ? (n.priceMixGrowth26 * 100).toFixed(2)
+          : '',
+        n.momentum26 !== null ? (n.momentum26 * 100).toFixed(2) : '',
+      ].join(',');
+
     for (const r of tableRows) {
-      const n = r.original;
-      lines.push(
-        [
-          esc(n.level),
-          esc(n.name),
-          esc(n.atc1Name),
-          esc(n.atc4Name),
-          esc(n.nfc1Name),
-          esc(n.productName),
-          esc(n.packName),
-          n.rank ?? '',
-          n.v2024.toFixed(2),
-          n.v2025.toFixed(2),
-          n.v2026.toFixed(2),
-          n.growth24Source.isNew
-            ? 'New'
-            : n.growth24Source.raw !== null
-            ? (n.growth24Source.raw * 100).toFixed(2)
-            : '',
-          n.growth25.isNew
-            ? 'New'
-            : n.growth25.raw !== null
-            ? (n.growth25.raw * 100).toFixed(2)
-            : '',
-          n.growth26.isNew
-            ? 'New'
-            : n.growth26.raw !== null
-            ? (n.growth26.raw * 100).toFixed(2)
-            : '',
-          n.cagr24_26.raw !== null ? (n.cagr24_26.raw * 100).toFixed(2) : '',
-          n.share24 !== null ? (n.share24 * 100).toFixed(4) : '',
-          n.share25 !== null ? (n.share25 * 100).toFixed(4) : '',
-          n.share26 !== null ? (n.share26 * 100).toFixed(4) : '',
-          n.totalMarketShare26 !== null
-            ? (n.totalMarketShare26 * 100).toFixed(4)
-            : '',
-          n.deltaShare26_25Pp !== null ? n.deltaShare26_25Pp.toFixed(3) : '',
-          n.evolutionIndex26 !== null ? n.evolutionIndex26.toFixed(2) : '',
-          n.avgPrice26 !== null ? n.avgPrice26.toFixed(2) : '',
-          n.priceMixGrowth26 !== null
-            ? (n.priceMixGrowth26 * 100).toFixed(2)
-            : '',
-          n.momentum26 !== null ? (n.momentum26 * 100).toFixed(2) : '',
-        ].join(',')
-      );
+      lines.push(formatNodeCsvLine(r.original));
     }
+
+    // Append Total summary row at the end
+    lines.push(formatNodeCsvLine(tot, totalRowLabel, 'TOTAL'));
 
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `IQVIA_Egypt_${period.toUpperCase()}_${measure}_${groupBy}_Aug2026.csv`;
+    const rankSuffix = rankLimit === 'all' ? '' : `_Top${rankLimit}`;
+    a.download = `IQVIA_Egypt_${period.toUpperCase()}_${measure}_${groupBy}${rankSuffix}_Aug2026.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const tot = tableData.totalNode;
   const isTreeMode = groupBy === 'tree_product_pack' || groupBy === 'tree_full';
   const virtualItems = rowVirtualizer.getVirtualItems();
   const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
@@ -858,7 +904,7 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
           </div>
         </div>
 
-        {/* Right: Search Input + Column Chooser (UX-5) + Row Count + CSV Export */}
+        {/* Right: Search Input + Column Chooser (UX-5) + Row Count + Rank Dropdown + CSV Export */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative w-60 sm:w-64">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -957,6 +1003,31 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
             {tableRows.length.toLocaleString()} visible rows
           </span>
 
+          {/* Rank Filter Dropdown next to Export CSV */}
+          <div className="inline-flex items-center gap-1.5">
+            <label
+              htmlFor="explorer-rank-limit"
+              className="text-xs font-semibold text-slate-600 dark:text-slate-300"
+            >
+              Rank:
+            </label>
+            <select
+              id="explorer-rank-limit"
+              value={rankLimit}
+              onChange={(e) => {
+                const val = e.target.value;
+                setRankLimit(val === 'all' ? 'all' : (Number(val) as 20 | 10 | 5));
+              }}
+              aria-label="Rank Filter Limit"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 hover:border-indigo-500 focus:outline-none focus:border-indigo-500 transition-colors"
+            >
+              <option value="all">All</option>
+              <option value={20}>Top 20</option>
+              <option value={10}>Top 10</option>
+              <option value={5}>Top 5</option>
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={handleExportCsv}
@@ -968,43 +1039,10 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
         </div>
       </div>
 
-      {/* Column Group Banner + Data Quality Footnote (QW-3) */}
-      <div className="px-4 py-2 bg-indigo-50/80 dark:bg-indigo-950/40 border-b border-indigo-100/90 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">
-            Active Column Set: {periodHeader} • {measureHeader}
-          </span>
-          <span className="text-slate-300 dark:text-slate-600">|</span>
-          <span className="text-slate-600 dark:text-slate-400">
-            Secondary subtitle in Growth 26 shows complementary{' '}
-            {measure === 'value' ? 'Units Growth %' : 'LC Value Growth %'}
-          </span>
-          <span className="text-slate-300 dark:text-slate-600">|</span>
-          {/* QW-3: Data-quality footnote */}
-          <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/25 font-mono text-[10px] cursor-help"
-            title="Rule: Period-over-period growth rates > +999.0% (from near-zero prior bases) are capped at +999.0%+ in table display to prevent visual distortion; exact uncapped values are preserved in cell tooltips and CSV exports. Items with 0 prior-period sales and >0 current sales are badged as 'New'."
-          >
-            <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-            <span>
-              {tableData.flaggedCappedCount.toLocaleString()} rows capped at +999.0%+ ·{' '}
-              {tableData.newCount.toLocaleString()} new launches in scope
-            </span>
-            <Info className="w-2.5 h-2.5 opacity-70 shrink-0" />
-          </span>
-        </div>
-        <div className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
-          Scope Total 2026:{' '}
-          <strong className="text-indigo-950 dark:text-white font-bold">
-            {formatExactValue(tot.v2026, measure)}
-          </strong>
-        </div>
-      </div>
-
-      {/* Virtualized Table Scroll Container */}
+      {/* Virtualized Table Scroll Container (Compact height so header, sticky bottom total, and horizontal scrollbar fit on screen together) */}
       <div
         ref={tableContainerRef}
-        className="h-[620px] overflow-auto relative overscroll-contain"
+        className="max-h-[min(420px,calc(100vh-210px))] overflow-auto relative overscroll-contain"
       >
         <table
           className="w-full border-separate border-spacing-0 text-left table-fixed"
@@ -1017,8 +1055,8 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
             )}px`,
           }}
         >
-          {/* Sticky Header + Pinned Scope Totals Row */}
-          <thead className="sticky top-0 z-30 shadow-md">
+          {/* Sticky Header */}
+          <thead className="sticky top-0 z-30 shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header, colIdx) => {
@@ -1071,8 +1109,67 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
                 })}
               </tr>
             ))}
+          </thead>
 
-            {/* Pinned Scope Totals Row right beneath the header (dynamically aligned to visible columns) */}
+          {/* Virtualized Body using in-flow spacer rows for rock-solid table layout */}
+          <tbody>
+            {paddingTop > 0 && (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={table.getVisibleLeafColumns().length}
+                  style={{ height: `${paddingTop}px`, padding: 0, border: 0 }}
+                />
+              </tr>
+            )}
+            {virtualItems.map((virtualRow) => {
+              const row = tableRows[virtualRow.index];
+              const isChild = row.depth > 0;
+
+              return (
+                <tr
+                  key={row.id}
+                  style={{ height: `${virtualRow.size}px` }}
+                  className={`group transition-colors ${
+                    isChild
+                      ? 'bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+                      : 'bg-white dark:bg-slate-950 hover:bg-indigo-50/30 dark:hover:bg-slate-900'
+                  }`}
+                >
+                  {row.getVisibleCells().map((cell, colIdx) => {
+                    const isStickyFirst = colIdx === 0;
+                    return (
+                      <td
+                        key={cell.id}
+                        style={{ width: `${cell.column.getSize()}px` }}
+                        className={`px-2.5 py-1.5 align-middle border-b border-slate-100 dark:border-slate-800/70 ${
+                          isStickyFirst
+                            ? `sticky left-0 z-10 border-r border-slate-200/90 dark:border-slate-800 text-left overflow-hidden ${
+                                isChild
+                                  ? 'bg-slate-50/90 dark:bg-slate-900 group-hover:bg-slate-100 dark:group-hover:bg-slate-800'
+                                  : 'bg-white dark:bg-slate-950 group-hover:bg-indigo-50/40 dark:group-hover:bg-slate-900'
+                              }`
+                            : 'text-right border-r border-slate-100/70 dark:border-slate-800/40'
+                        }`}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+            {paddingBottom > 0 && (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={table.getVisibleLeafColumns().length}
+                  style={{ height: `${paddingBottom}px`, padding: 0, border: 0 }}
+                />
+              </tr>
+            )}
+          </tbody>
+
+          {/* Sticky Total Footer Row at the end of the table */}
+          <tfoot className="sticky bottom-0 z-30 shadow-[0_-4px_12px_rgba(15,23,42,0.08)]">
             <tr className="font-semibold text-xs">
               {table.getVisibleLeafColumns().map((col) => {
                 const colId = col.id;
@@ -1080,21 +1177,24 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
                   return (
                     <td
                       key={colId}
-                      className="sticky left-0 z-40 bg-indigo-50/95 dark:bg-slate-900 px-3 py-2 border-r border-indigo-200/80 dark:border-slate-700 border-b-2 border-b-indigo-500"
+                      className="sticky left-0 z-40 bg-indigo-50/95 dark:bg-slate-900 px-3 py-2 border-r border-indigo-200/80 dark:border-slate-700 border-t-2 border-t-indigo-500"
                     >
                       <div className="flex items-center gap-2">
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-indigo-600 text-white shadow-sm">
                           TOTAL
                         </span>
-                        <span className="font-bold text-indigo-950 dark:text-white truncate">
-                          Filtered Scope Total ({searchedNodes.length.toLocaleString()} top items)
+                        <span
+                          className="font-bold text-indigo-950 dark:text-white truncate"
+                          title={totalRowLabel}
+                        >
+                          {totalRowLabel}
                         </span>
                       </div>
                     </td>
                   );
                 }
                 const cellBase =
-                  'px-2.5 py-2 text-right bg-indigo-50/90 dark:bg-slate-900 border-b-2 border-b-indigo-500';
+                  'px-2.5 py-2 text-right bg-indigo-50/95 dark:bg-slate-900 border-t-2 border-t-indigo-500 border-r border-indigo-100/80 dark:border-slate-800/80';
                 switch (colId) {
                   case 'rank':
                     return (
@@ -1170,13 +1270,21 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
                       </td>
                     );
                   case 'share24':
+                    return (
+                      <td
+                        key={colId}
+                        className={`${cellBase} font-mono text-slate-700 dark:text-slate-300`}
+                      >
+                        {formatSharePct(tot.share24)}
+                      </td>
+                    );
                   case 'share25':
                     return (
                       <td
                         key={colId}
                         className={`${cellBase} font-mono text-slate-700 dark:text-slate-300`}
                       >
-                        100.00%
+                        {formatSharePct(tot.share25)}
                       </td>
                     );
                   case 'share26':
@@ -1185,7 +1293,9 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
                         key={colId}
                         className={`${cellBase} font-mono font-bold text-slate-900 dark:text-white`}
                       >
-                        100.00%
+                        {formatSharePct(
+                          shareBasis === 'total' ? tot.totalMarketShare26 : tot.share26
+                        )}
                       </td>
                     );
                   case 'totalMarketShare26':
@@ -1197,19 +1307,29 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
                         {formatSharePct(tot.totalMarketShare26)}
                       </td>
                     );
-                  case 'deltaShare26_25Pp':
+                  case 'deltaShare26_25Pp': {
+                    const d = tot.deltaShare26_25Pp;
+                    const color =
+                      d !== null && d > 0.005
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : d !== null && d < -0.005
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-slate-500';
                     return (
-                      <td key={colId} className={`${cellBase} font-mono text-slate-500`}>
-                        0.00 pp
+                      <td key={colId} className={`${cellBase} font-mono ${color}`}>
+                        {d !== null ? formatPp(d, 2) : '—'}
                       </td>
                     );
+                  }
                   case 'evolutionIndex26':
                     return (
                       <td
                         key={colId}
                         className={`${cellBase} font-mono text-slate-700 dark:text-slate-300`}
                       >
-                        100.0
+                        {tot.evolutionIndex26 !== null
+                          ? formatEvolutionIndex(tot.evolutionIndex26)
+                          : '—'}
                       </td>
                     );
                   case 'priceMix':
@@ -1235,64 +1355,7 @@ export const MainHierarchyTable: React.FC<MainHierarchyTableProps> = ({ tableDat
                 }
               })}
             </tr>
-          </thead>
-
-          {/* Virtualized Body using in-flow spacer rows for rock-solid table layout */}
-          <tbody>
-            {paddingTop > 0 && (
-              <tr aria-hidden="true">
-                <td
-                  colSpan={table.getVisibleLeafColumns().length}
-                  style={{ height: `${paddingTop}px`, padding: 0, border: 0 }}
-                />
-              </tr>
-            )}
-            {virtualItems.map((virtualRow) => {
-              const row = tableRows[virtualRow.index];
-              const isChild = row.depth > 0;
-
-              return (
-                <tr
-                  key={row.id}
-                  style={{ height: `${virtualRow.size}px` }}
-                  className={`group transition-colors ${
-                    isChild
-                      ? 'bg-slate-50/70 dark:bg-slate-900/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
-                      : 'bg-white dark:bg-slate-950 hover:bg-indigo-50/30 dark:hover:bg-slate-900'
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell, colIdx) => {
-                    const isStickyFirst = colIdx === 0;
-                    return (
-                      <td
-                        key={cell.id}
-                        style={{ width: `${cell.column.getSize()}px` }}
-                        className={`px-2.5 py-1.5 align-middle border-b border-slate-100 dark:border-slate-800/70 ${
-                          isStickyFirst
-                            ? `sticky left-0 z-10 border-r border-slate-200/90 dark:border-slate-800 text-left overflow-hidden ${
-                                isChild
-                                  ? 'bg-slate-50/90 dark:bg-slate-900 group-hover:bg-slate-100 dark:group-hover:bg-slate-800'
-                                  : 'bg-white dark:bg-slate-950 group-hover:bg-indigo-50/40 dark:group-hover:bg-slate-900'
-                              }`
-                            : 'text-right border-r border-slate-100/70 dark:border-slate-800/40'
-                        }`}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-            {paddingBottom > 0 && (
-              <tr aria-hidden="true">
-                <td
-                  colSpan={table.getVisibleLeafColumns().length}
-                  style={{ height: `${paddingBottom}px`, padding: 0, border: 0 }}
-                />
-              </tr>
-            )}
-          </tbody>
+          </tfoot>
         </table>
       </div>
     </div>

@@ -1,6 +1,6 @@
 # IQVIA Egypt Pharma Market Intelligence Report (React + TypeScript)
 
-Single-page pharmaceutical market analytics application built for **Hefny Pharma Group (HPG)** using the **IQVIA Egypt Combined Data** (`MAT Aug 2024–2026` & `YTD Aug 2024–2026`), focused on **Products (Brands)** and **Packs** across all 5 hierarchy levels (`ATC1 > ATC4 > NFC1 > Product > Pack`).
+Single-page pharmaceutical market analytics application built for **Hefny Pharma Group (HPG)** using the **IQVIA Egypt Combined Data** (`MAT Aug 2024-2026` & `YTD Aug 2024-2026`), focused on **Products (Brands)** and **Packs** across all 5 hierarchy levels (`ATC1 > ATC4 > NFC1 > Product > Pack`).
 
 ---
 
@@ -37,32 +37,32 @@ npm run build
 ├── public/
 │   └── data/
 │       └── market-data.json                 # Dictionary-encoded compact JSON (28,410 hierarchy rows + rollups)
-├── src/
-│   ├── types/
-│   │   └── market.ts                        # Core TypeScript types & compact tuple schema
-│   ├── lib/
-│   │   ├── metrics.ts                       # Pure, unit-tested calculation functions (growth, CAGR, share, EI, HHI)
-│   │   ├── metrics.test.ts                  # Unit test suite for all mathematical & edge-case rules
-│   │   ├── filterEngine.ts                  # Single-pass (<15ms) bi-directional faceted filter engine & auto-pruner
-│   │   ├── aggregationEngine.ts             # Hierarchical (Product > Pack, 5-level tree) & flat table builder
-│   │   ├── analyticsEngine.ts               # Analytics models for report sections (Pareto, Matrix, Share Shift, Launches)
-│   │   ├── data.test.ts                     # Dataset integrity, grand totals, and interlinked filter verification tests
-│   │   └── formatters.ts                    # EGP mn/bn, %, pp, Evolution Index, and exact tooltip formatters
-│   ├── store/
-│   │   └── useMarketStore.ts                # Zustand global state with 2-way URL query string synchronization
-│   ├── components/
-│   │   ├── HeaderBar.tsx                    # Sticky HPG-branded header with MAT|YTD & LC Value|Units toggles + URL sharing
-│   │   ├── InterlinkedFilterBar.tsx         # 5 virtualized bi-directional multi-select filters + active chips
-│   │   ├── ExecutiveSummaryBanner.tsx       # Section A: 4-card persistent KPI summary (Value, Units, Portfolio, Concentration)
-│   │   ├── MainHierarchyTable.tsx           # Standalone top Explorer Table (Product > Pack) with in-flow virtualization + CSV export
-│   │   └── views/
-│   │       ├── MarketStructureView.tsx      # Sections B & H: Size/Growth bars, Treemap, Pareto 80/20, ATC4 HHI
-│   │       ├── ShareAndMatrixView.tsx       # Sections D, E & G: Bubble Matrix, Share Shift Slope, CAGR vs Latest Momentum
-│   │       ├── PortfolioAndLaunchesView.tsx # Sections I & J: NFC1 Mix, Price Tiers, Pack Extensions, New & Discontinued
-│   │       └── GrowthDecompositionView.tsx  # Supplementary Volume vs Price/Mix & Waterfall analytics module
-│   ├── App.tsx                              # Split workspace layout: Top Explorer Table + Bottom Interactive Chart Tabs
-│   ├── vite-env.d.ts                        # Vite client type declarations
-│   └── main.tsx                             # React 18 entry point
+└── src/
+    ├── types/
+    │   └── market.ts                        # Core TypeScript types & compact tuple schema
+    ├── lib/
+    │   ├── metrics.ts                       # Pure, unit-tested calculation functions (growth, CAGR, share, EI, HHI)
+    │   ├── metrics.test.ts                  # Unit test suite for all mathematical & edge-case rules
+    │   ├── filterEngine.ts                  # Single-pass (<15ms) bi-directional faceted filter engine & auto-pruner
+    │   ├── aggregationEngine.ts             # Hierarchical (Product > Pack, 5-level tree) & flat table builder
+    │   ├── analyticsEngine.ts               # Analytics models for report sections (Pareto, Matrix, Share Shift, Launches)
+    │   ├── data.test.ts                     # Dataset integrity, grand totals, and interlinked filter verification tests
+    │   └── formatters.ts                    # EGP mn/bn, %, pp, Evolution Index, and exact tooltip formatters
+    ├── store/
+    │   └── useMarketStore.ts                # Zustand global state with 2-way URL query string synchronization
+    ├── components/
+    │   ├── HeaderBar.tsx                    # Sticky HPG-branded header with MAT|YTD & LC Value|Units toggles + URL sharing
+    │   ├── InterlinkedFilterBar.tsx         # 5 virtualized bi-directional multi-select filters + active chips
+    │   ├── ExecutiveSummaryBanner.tsx       # Section A: 3-card persistent KPI summary (LC Value, Units Volume, Active Products & Packs)
+    │   ├── MainHierarchyTable.tsx           # Standalone top Explorer Table (Product > Pack) with in-flow virtualization + CSV export
+    │   └── views/
+    │       ├── MarketStructureView.tsx      # Sections B, H, K, M & P: Size/Growth bars, Treemap, Pareto 80/20, ATC4 HHI
+    │       ├── GrowthDecompositionView.tsx  # Sections C, F & L: Volume vs Price/Mix & Waterfall analytics module
+    │       ├── ShareAndMatrixView.tsx       # Sections D, E, G & N: Bubble Matrix, Share Shift Slope, CAGR vs Latest Momentum
+    │       └── PortfolioAndLaunchesView.tsx # Sections I, J & O: NFC1 Mix, Price Tiers, Pack Extensions, New & Discontinued
+    ├── App.tsx                              # Split workspace layout: Top Explorer Table + Bottom Interactive Chart Tabs
+    ├── vite-env.d.ts                        # Vite client type declarations
+    └── main.tsx                             # React 18 entry point
 ```
 
 ---
@@ -79,20 +79,21 @@ npm run build
    - **True cross-filtering in any direction**: selecting a Pack or Product narrows parent classes (`ATC1`, `ATC4`, `NFC1`), and selecting a parent class narrows child Products and Packs.
    - **OR** logic within a filter, **AND** logic across filters, live EGP/row-count badges per option, and automatic pruning of invalid selections with user notification.
 3. **Executive Summary Banner (`ExecutiveSummaryBanner.tsx`)**:
-   - 4 persistent KPI cards reacting immediately to filter and toggle changes:
-     1. **LC Value (EGP)**: 2026 Value, YoY Growth %, 2-yr CAGR (`Aug-24 to Aug-26`), secondary period comparison, and `% of Egypt` total market.
-     2. **Units Volume**: Juxtaposed directly alongside Value to separate real volume growth from price/inflation effects.
-     3. **Active Products & Packs**: Active brand and pack counts, average packs per brand, and 2026 new launch counts.
-     4. **Brand Concentration**: Top-5 and Top-10 brand share % plus scope Product **Herfindahl-Hirschman Index (HHI)**.
+   - 3 persistent KPI cards arranged in a clean 3-column grid (`md:grid-cols-3`) reacting immediately to filter and toggle changes:
+     1. **LC Value (EGP)**: 2026 Value, YoY Growth %, and 2-yr CAGR (`Aug-24 to Aug-26`).
+     2. **Units Volume**: Juxtaposed directly alongside Value with 2026 Units, YoY Growth %, and 2-yr CAGR (`Aug-24 to Aug-26`) to separate real volume growth from price/inflation effects.
+     3. **Active Products & Packs**: Active brand and pack counts along with average packs per brand (`packs/prod`).
+   - Collapsible **Key Insights** strip with implied Price/Mix summary, average pack price trajectory, and **Pin Snapshot (A/B)** scope comparison.
 4. **Top Standalone Explorer Table (`MainHierarchyTable.tsx`)**:
    - Permanently visible above the chart tabs so analysts can inspect and sort rows without switching tabs.
    - Supports **Hierarchy / Group By** modes (`Product > Pack` expandable tree by default, full 5-level `ATC1 > ATC4 > NFC1 > Product > Pack` tree, or flat `Product`, `Pack`, `NFC1`, `ATC4`, `ATC1` views).
    - Switchable **Share Basis** (`Current Filter Scope`, `Immediate Parent Node`, `Unfiltered Total Egypt Market`).
    - Uses in-flow spacer row virtualization (`@tanstack/react-virtual`) with sticky header, pinned `Filtered Scope Total` row, sticky first column, 3-point `24→26` mini-sparklines, complementary growth subtitle, and full **CSV Export**.
 5. **Bottom Interactive Visual Analytics Tabs (`App.tsx`)**:
-   - **Market Structure & Concentration (`Sec B & H`)**: Dual-axis Size & Value/Units Growth bar chart, Winsorised Growth Treemap (`Product > Pack` or `ATC1 > ATC4`), Product Pareto (`80/20`) curve, and ATC4 Concentration & HHI table with direct drill-to-table actions.
-   - **Share Matrix, Shifts & Momentum (`Sec D, E & G`)**: Growth-Share Bubble Matrix (`Stars`, `Cash Cows`, `Rising Challengers`, `Declining`), 3-year Share Shift Trajectory (`2024 → 2025 → 2026`) with gainers/losers table, and 2-yr CAGR vs Latest Growth / `YTD - MAT` Momentum scatter.
-   - **Portfolio, Packs & Launches (`Sec I & J`)**: Dosage Form (`NFC1`) mix, Pack Price Tier distribution (`Economy <50 EGP` to `Ultra-Premium 500+ EGP`), Multi-Pack Brand Architecture explorer, and 2026 New Launches vs Discontinued tracker.
+   - **Market Structure & Concentration (`Sec B, H, K, M & P`)**: Dual-axis Size & Value/Units Growth bar chart, Winsorised Growth Treemap (`Product > Pack` or `ATC1 > ATC4`), Product Pareto (`80/20`) curve, and ATC4 Concentration & HHI table with direct drill-to-table actions.
+   - **Growth Drivers & Movers (`Sec C, F & L`)**: Volume vs Price/Mix growth decomposition, Growth Contribution Waterfall, and Indexed Real vs Nominal trajectories.
+   - **Share Matrix, Shifts & Momentum (`Sec D, E, G & N`)**: Growth-Share Bubble Matrix (`Stars`, `Cash Cows`, `Rising Challengers`, `Declining`), 3-year Share Shift Trajectory (`2024 → 2025 → 2026`) with gainers/losers table, and 2-yr CAGR vs Latest Growth / `YTD - MAT` Momentum scatter.
+   - **Portfolio, Packs & Launches (`Sec I, J & O`)**: Dosage Form (`NFC1`) mix, Pack Price Tier distribution (`Economy <50 EGP` to `Ultra-Premium 500+ EGP`), Multi-Pack Brand Architecture explorer, and 2026 New Launches vs Discontinued tracker.
 
 ---
 
@@ -127,5 +128,3 @@ npm run build
 5. **Extreme Growth Capping (`+999.0%+`) & Winsorisation**:
    - Displayed growth values exceeding `+999.0%` (`9.99` in decimal) are capped at `+999.0%+` and flagged with an indicator icon (`1,079` source rows exceed `+1000%` in MAT Aug 2026 LC Value).
    - Winsorisation is applied strictly to chart colour scales and scatter bounds, never to totals or table values.
-#   A u g 2 0 2 6 . M A T . Y T D  
- 

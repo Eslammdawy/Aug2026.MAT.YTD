@@ -73,6 +73,12 @@ export interface TableNode {
   value2024: number;
   value2025: number;
   value2026: number;
+  // Auxiliary values for exact subset total recalculation (Rank Top N / Search)
+  imp2023: number;
+  ytdActive25: number;
+  ytdActive26: number;
+  matActive25: number;
+  matActive26: number;
   // Growth & CAGR for active measure
   growth24Source: GrowthMetric;
   growth25: GrowthMetric;
@@ -302,6 +308,11 @@ function finalizeNodeFromAcc(
     value2024,
     value2025,
     value2026,
+    imp2023: acc.imp23[g24Idx],
+    ytdActive25: m[ytdActiveOffset + 1],
+    ytdActive26: m[ytdActiveOffset + 2],
+    matActive25: m[matActiveOffset + 1],
+    matActive26: m[matActiveOffset + 2],
     growth24Source,
     growth25,
     growth26,
@@ -626,5 +637,146 @@ export function buildTableViewData(
     totalNode,
     flaggedCappedCount,
     newCount,
+  };
+}
+
+/**
+ * Dynamically aggregates a subset of top-level TableNodes (e.g. when Rank Top 5/10/20
+ * or table search is active) so the sticky Total footer row reflects the displayed items.
+ */
+export function computeDisplayedSubsetTotalNode(
+  displayedTopNodes: TableNode[],
+  scopeTotalNode: TableNode,
+  allTopNodesCount: number
+): TableNode {
+  if (displayedTopNodes.length === allTopNodesCount && allTopNodesCount > 0) {
+    return scopeTotalNode;
+  }
+
+  let v2024 = 0;
+  let v2025 = 0;
+  let v2026 = 0;
+  let units2024 = 0;
+  let units2025 = 0;
+  let units2026 = 0;
+  let value2024 = 0;
+  let value2025 = 0;
+  let value2026 = 0;
+  let imp2023 = 0;
+  let ytdActive25 = 0;
+  let ytdActive26 = 0;
+  let matActive25 = 0;
+  let matActive26 = 0;
+  let totalMarketShare25Sum = 0;
+  let totalMarketShare26Sum = 0;
+
+  for (const n of displayedTopNodes) {
+    v2024 += n.v2024;
+    v2025 += n.v2025;
+    v2026 += n.v2026;
+    units2024 += n.units2024;
+    units2025 += n.units2025;
+    units2026 += n.units2026;
+    value2024 += n.value2024;
+    value2025 += n.value2025;
+    value2026 += n.value2026;
+    imp2023 += n.imp2023;
+    ytdActive25 += n.ytdActive25;
+    ytdActive26 += n.ytdActive26;
+    matActive25 += n.matActive25;
+    matActive26 += n.matActive26;
+    if (n.totalMarketShare25 !== null) totalMarketShare25Sum += n.totalMarketShare25;
+    if (n.totalMarketShare26 !== null) totalMarketShare26Sum += n.totalMarketShare26;
+  }
+
+  const rawG24 =
+    displayedTopNodes.length === 1
+      ? displayedTopNodes[0].growth24Source.raw
+      : v2024 > 0 && imp2023 > 0
+      ? v2024 / imp2023 - 1
+      : null;
+  const growth24Source = normalizeSourceGrowth2024(rawG24, v2024);
+
+  const growth25 = calcGrowth(v2025, v2024);
+  const growth26 = calcGrowth(v2026, v2025);
+  const cagr24_26 = calcCagr24To26(v2026, v2024);
+
+  const valueGrowth26 = calcGrowth(value2026, value2025);
+  const unitsGrowth26 = calcGrowth(units2026, units2025);
+  const valueCagr24_26 = calcCagr24To26(value2026, value2024);
+  const unitsCagr24_26 = calcCagr24To26(units2026, units2024);
+
+  const absGrowth26 = calcAbsoluteGrowth(v2026, v2025);
+  const contribGrowthPp = calcContributionToGrowthPp(v2026, v2025, scopeTotalNode.v2025);
+
+  const share24 = calcMarketShare(v2024, scopeTotalNode.v2024);
+  const share25 = calcMarketShare(v2025, scopeTotalNode.v2025);
+  const share26 = calcMarketShare(v2026, scopeTotalNode.v2026);
+
+  const totalMarketShare25 = displayedTopNodes.length > 0 ? totalMarketShare25Sum : 0;
+  const totalMarketShare26 = displayedTopNodes.length > 0 ? totalMarketShare26Sum : 0;
+  const deltaTotalShare26_25Pp = calcDeltaSharePp(totalMarketShare26, totalMarketShare25);
+
+  const deltaShare26_25Pp = calcDeltaSharePp(share26, share25);
+  const deltaShare25_24Pp = calcDeltaSharePp(share25, share24);
+  const relShareChange26_25 = calcRelativeShareChange(share26, share25);
+
+  const evolutionIndex25 = calcEvolutionIndex(growth25.raw, scopeTotalNode.growth25.raw);
+  const evolutionIndex26 = calcEvolutionIndex(growth26.raw, scopeTotalNode.growth26.raw);
+
+  const avgPrice24 = calcAveragePrice(value2024, units2024);
+  const avgPrice25 = calcAveragePrice(value2025, units2025);
+  const avgPrice26 = calcAveragePrice(value2026, units2026);
+  const priceMixGrowth26 = calcPriceMixGrowth(valueGrowth26.raw, unitsGrowth26.raw);
+
+  const ytdG26 = calcGrowth(ytdActive26, ytdActive25);
+  const matG26 = calcGrowth(matActive26, matActive25);
+  const momentum26 = calcMomentum(ytdG26.raw, matG26.raw);
+
+  return {
+    ...scopeTotalNode,
+    id: 'displayed-subset-total',
+    name: `Displayed Total (${displayedTopNodes.length.toLocaleString()} items)`,
+    v2024,
+    v2025,
+    v2026,
+    units2024,
+    units2025,
+    units2026,
+    value2024,
+    value2025,
+    value2026,
+    imp2023,
+    ytdActive25,
+    ytdActive26,
+    matActive25,
+    matActive26,
+    growth24Source,
+    growth25,
+    growth26,
+    cagr24_26,
+    valueGrowth26,
+    unitsGrowth26,
+    valueCagr24_26,
+    unitsCagr24_26,
+    absGrowth26,
+    contribGrowthPp,
+    share24,
+    share25,
+    share26,
+    totalMarketShare25,
+    totalMarketShare26,
+    deltaTotalShare26_25Pp,
+    parentShare26: share26,
+    deltaShare26_25Pp,
+    deltaShare25_24Pp,
+    relShareChange26_25,
+    evolutionIndex25,
+    evolutionIndex26,
+    avgPrice24,
+    avgPrice25,
+    avgPrice26,
+    priceMixGrowth26,
+    momentum26,
   };
 }

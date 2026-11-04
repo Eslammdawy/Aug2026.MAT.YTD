@@ -2,7 +2,10 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { MarketDatasetJSON } from '../types/market';
-import { buildTableViewData } from './aggregationEngine';
+import {
+  buildTableViewData,
+  computeDisplayedSubsetTotalNode,
+} from './aggregationEngine';
 import { computeScopedAnalyticsBundle } from './analyticsEngine';
 import {
   buildIndexedMarketData,
@@ -186,5 +189,32 @@ describe('IQVIA Egypt Market Dataset & Interlinked Filter Engine Verification', 
     expect(incumbentProduct.rank25).not.toBeNull();
     expect(incumbentProduct.evolutionIndex25).not.toBeNull();
     expect(incumbentProduct.valueCagr24_26.status).not.toBe('null');
+  });
+
+  it('dynamically recalculates Total footer node for Rank limits (All, Top 20, Top 10, Top 5)', () => {
+    const state = computeFacetedFilterState(indexed, EMPTY_SELECTIONS, 'mat', 'value');
+    const tableData = buildTableViewData(indexed, state, 'mat', 'value', 'tree_product_pack');
+
+    const allTotal = computeDisplayedSubsetTotalNode(
+      tableData.nodes,
+      tableData.totalNode,
+      tableData.nodes.length
+    );
+    expect(allTotal.v2026).toBe(tableData.totalNode.v2026);
+    expect(allTotal.share26).toBeCloseTo(1, 6);
+
+    for (const nLimit of [20, 10, 5] as const) {
+      const topSlice = tableData.nodes.slice(0, nLimit);
+      const subsetTotal = computeDisplayedSubsetTotalNode(
+        topSlice,
+        tableData.totalNode,
+        tableData.nodes.length
+      );
+      const expectedSum26 = topSlice.reduce((s, r) => s + r.v2026, 0);
+      expect(subsetTotal.v2026).toBeCloseTo(expectedSum26, 2);
+      expect(subsetTotal.share26).toBeCloseTo(expectedSum26 / tableData.totalNode.v2026, 6);
+      expect(subsetTotal.share26!).toBeGreaterThan(0);
+      expect(subsetTotal.share26!).toBeLessThan(1);
+    }
   });
 });

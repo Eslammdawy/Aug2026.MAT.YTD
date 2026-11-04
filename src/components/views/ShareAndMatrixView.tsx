@@ -30,8 +30,8 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
   const [scope, setScope] = useState<'product' | 'pack' | 'nfc1' | 'atc4'>('product');
 
   const isDark = theme === 'dark';
-  const textColor = isDark ? '#cbd5e1' : '#334155';
-  const gridColor = isDark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.25)';
+  const textColor = isDark ? '#cbd5e1' : '#1e293b';
+  const gridColor = isDark ? 'rgba(148,163,184,0.12)' : '#e2e8f0';
 
   const activeItems = useMemo(() => {
     if (scope === 'product') return bundle.productNodes;
@@ -107,6 +107,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
     return {
       backgroundColor: 'transparent',
       tooltip: {
+        backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : '#ffffff',
+        borderColor: isDark ? '#334155' : '#cbd5e1',
+        textStyle: { color: isDark ? '#f8fafc' : '#0f172a' },
+        extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border-radius: 8px;',
         formatter: (param: any) => {
           const n = param.data?.node;
           if (!n) return '';
@@ -208,6 +212,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
       backgroundColor: 'transparent',
       tooltip: {
         trigger: 'axis',
+        backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : '#ffffff',
+        borderColor: isDark ? '#334155' : '#cbd5e1',
+        textStyle: { color: isDark ? '#f8fafc' : '#0f172a' },
+        extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border-radius: 8px;',
       },
       legend: {
         data: top10.map((n) => n.name),
@@ -295,6 +303,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
     return {
       backgroundColor: 'transparent',
       tooltip: {
+        backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : '#ffffff',
+        borderColor: isDark ? '#334155' : '#cbd5e1',
+        textStyle: { color: isDark ? '#f8fafc' : '#0f172a' },
+        extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border-radius: 8px;',
         formatter: (p: any) => {
           const n = p.data?.node;
           if (!n) return '';
@@ -371,6 +383,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
+        backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : '#ffffff',
+        borderColor: isDark ? '#334155' : '#cbd5e1',
+        textStyle: { color: isDark ? '#f8fafc' : '#0f172a' },
+        extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border-radius: 8px;',
         formatter: (params: any[]) => {
           const idx = params[0]?.dataIndex ?? 0;
           const item = combined[idx];
@@ -422,11 +438,11 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
   return (
     <div className="space-y-6">
       {/* Scope Switcher Banner */}
-      <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+      <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.05)] flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs text-slate-700 dark:text-slate-300 font-semibold">
           Select entity granularity for Matrix, Share Shift, and Momentum analyses:
         </div>
-        <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+        <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
           {(
             [
               ['product', 'Products (Brands — Default)'],
@@ -439,10 +455,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
               key={k}
               type="button"
               onClick={() => setScope(k)}
-              className={`px-3 py-1 rounded-md font-semibold transition-colors ${
+              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
                 scope === k
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {label}
@@ -454,10 +470,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
       {/* Row 1: Section D — Growth-Share Bubble Matrix & Section E — Slope Chart */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Card D: Growth-Share Bubble Matrix */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col">
           <div className="mb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Compass className="w-4 h-4 text-emerald-500" />
+              <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>D. Growth-Share Bubble Matrix (Colored by Evolution Index)</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -465,28 +481,28 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
             </p>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 mb-3 text-center">
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25">
-              <div className="text-[10px] font-bold text-emerald-500 uppercase">★ Stars</div>
-              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white">
+          <div className="grid grid-cols-4 gap-2.5 mb-3 text-center">
+            <div className="p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-500/25">
+              <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">★ Stars</div>
+              <div className="text-base font-mono font-bold text-slate-900 dark:text-white">
                 {quadrantCounts.stars}
               </div>
             </div>
-            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/25">
-              <div className="text-[10px] font-bold text-amber-500 uppercase">● Cash Cows</div>
-              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white">
+            <div className="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-500/25">
+              <div className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">● Cash Cows</div>
+              <div className="text-base font-mono font-bold text-slate-900 dark:text-white">
                 {quadrantCounts.cashCows}
               </div>
             </div>
-            <div className="p-2 rounded-lg bg-sky-500/10 border border-sky-500/25">
-              <div className="text-[10px] font-bold text-sky-400 uppercase">▲ Rising</div>
-              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white">
+            <div className="p-2.5 rounded-xl bg-sky-50/80 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-500/25">
+              <div className="text-[10px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wide">▲ Rising</div>
+              <div className="text-base font-mono font-bold text-slate-900 dark:text-white">
                 {quadrantCounts.rising}
               </div>
             </div>
-            <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/25">
-              <div className="text-[10px] font-bold text-rose-400 uppercase">▼ Declining</div>
-              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white">
+            <div className="p-2.5 rounded-xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-500/25">
+              <div className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wide">▼ Declining</div>
+              <div className="text-base font-mono font-bold text-slate-900 dark:text-white">
                 {quadrantCounts.declining}
               </div>
             </div>
@@ -509,10 +525,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
         </div>
 
         {/* Card E1: Share Shift Trajectory (2024 -> 2025 -> 2026) */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col">
           <div className="mb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <GitCommit className="w-4 h-4 text-indigo-500" />
+              <GitCommit className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               <span>E1. Multi-Year Share Shift Trajectory (Aug 2024 → 2025 → 2026)</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -527,27 +543,27 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
       </div>
 
       {/* Row 2: Section E2 — Ranked Table of Share Gainers & Losers (pp) */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)]">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">
           E2. Ranked Market Share Gainers &amp; Losers (Δ Share pp, 2026 vs 2025)
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Share Gainers */}
           <div>
-            <div className="text-xs font-bold uppercase text-emerald-500 mb-2 flex items-center gap-1">
+            <div className="text-xs font-bold uppercase text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-1">
               <ArrowUpRight className="w-4 h-4" />
               <span>Top 10 Share Gainers (+pp)</span>
             </div>
-            <div className="overflow-auto rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="overflow-auto rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-sm">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-slate-100 dark:bg-slate-900 text-[10px] font-bold uppercase text-slate-500">
+                <thead className="bg-slate-100/90 dark:bg-slate-900 text-[10px] font-bold uppercase text-slate-700 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th className="py-2 px-2.5">Name</th>
-                    <th className="py-2 px-2 text-right">Share 24</th>
-                    <th className="py-2 px-2 text-right">Share 25</th>
-                    <th className="py-2 px-2 text-right">Share 26</th>
-                    <th className="py-2 px-2.5 text-right">Δ Share (pp)</th>
-                    <th className="py-2 px-2 text-right">EI</th>
+                    <th className="py-2.5 px-3">Name</th>
+                    <th className="py-2.5 px-2 text-right">Share 24</th>
+                    <th className="py-2.5 px-2 text-right">Share 25</th>
+                    <th className="py-2.5 px-2 text-right">Share 26</th>
+                    <th className="py-2.5 px-3 text-right">Δ Share (pp)</th>
+                    <th className="py-2.5 px-2 text-right">EI</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
@@ -557,24 +573,24 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
                       onClick={() =>
                         n.dimKey && n.dictIdx !== undefined && toggleFilterValue(n.dimKey, n.dictIdx)
                       }
-                      className="hover:bg-emerald-500/5 cursor-pointer"
+                      className="hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10 cursor-pointer transition-colors"
                     >
-                      <td className="py-2 px-2.5 font-semibold max-w-[190px] truncate">
+                      <td className="py-2 px-3 font-semibold max-w-[190px] truncate text-slate-800 dark:text-slate-200">
                         {n.name}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono text-slate-400">
+                      <td className="py-2 px-2 text-right font-mono text-slate-500 dark:text-slate-400">
                         {formatSharePct(n.share24)}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono text-slate-400">
+                      <td className="py-2 px-2 text-right font-mono text-slate-500 dark:text-slate-400">
                         {formatSharePct(n.share25)}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono font-semibold">
+                      <td className="py-2 px-2 text-right font-mono font-semibold text-slate-900 dark:text-slate-100">
                         {formatSharePct(n.share26)}
                       </td>
-                      <td className="py-2 px-2.5 text-right font-mono font-bold text-emerald-500">
+                      <td className="py-2 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         {formatPp(n.deltaShare26_25Pp, 2)}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono">
+                      <td className="py-2 px-2 text-right font-mono font-medium">
                         {formatEvolutionIndex(n.evolutionIndex26)}
                       </td>
                     </tr>
@@ -586,20 +602,20 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
 
           {/* Share Losers */}
           <div>
-            <div className="text-xs font-bold uppercase text-rose-500 mb-2 flex items-center gap-1">
+            <div className="text-xs font-bold uppercase text-rose-600 dark:text-rose-400 mb-2 flex items-center gap-1">
               <ArrowDownRight className="w-4 h-4" />
               <span>Top 10 Share Losers (-pp)</span>
             </div>
-            <div className="overflow-auto rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="overflow-auto rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-sm">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-slate-100 dark:bg-slate-900 text-[10px] font-bold uppercase text-slate-500">
+                <thead className="bg-slate-100/90 dark:bg-slate-900 text-[10px] font-bold uppercase text-slate-700 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th className="py-2 px-2.5">Name</th>
-                    <th className="py-2 px-2 text-right">Share 24</th>
-                    <th className="py-2 px-2 text-right">Share 25</th>
-                    <th className="py-2 px-2 text-right">Share 26</th>
-                    <th className="py-2 px-2.5 text-right">Δ Share (pp)</th>
-                    <th className="py-2 px-2 text-right">EI</th>
+                    <th className="py-2.5 px-3">Name</th>
+                    <th className="py-2.5 px-2 text-right">Share 24</th>
+                    <th className="py-2.5 px-2 text-right">Share 25</th>
+                    <th className="py-2.5 px-2 text-right">Share 26</th>
+                    <th className="py-2.5 px-3 text-right">Δ Share (pp)</th>
+                    <th className="py-2.5 px-2 text-right">EI</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
@@ -609,24 +625,24 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
                       onClick={() =>
                         n.dimKey && n.dictIdx !== undefined && toggleFilterValue(n.dimKey, n.dictIdx)
                       }
-                      className="hover:bg-rose-500/5 cursor-pointer"
+                      className="hover:bg-rose-50/50 dark:hover:bg-rose-500/10 cursor-pointer transition-colors"
                     >
-                      <td className="py-2 px-2.5 font-semibold max-w-[190px] truncate">
+                      <td className="py-2 px-3 font-semibold max-w-[190px] truncate text-slate-800 dark:text-slate-200">
                         {n.name}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono text-slate-400">
+                      <td className="py-2 px-2 text-right font-mono text-slate-500 dark:text-slate-400">
                         {formatSharePct(n.share24)}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono text-slate-400">
+                      <td className="py-2 px-2 text-right font-mono text-slate-500 dark:text-slate-400">
                         {formatSharePct(n.share25)}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono font-semibold">
+                      <td className="py-2 px-2 text-right font-mono font-semibold text-slate-900 dark:text-slate-100">
                         {formatSharePct(n.share26)}
                       </td>
-                      <td className="py-2 px-2.5 text-right font-mono font-bold text-rose-500">
+                      <td className="py-2 px-3 text-right font-mono font-bold text-rose-600 dark:text-rose-400">
                         {formatPp(n.deltaShare26_25Pp, 2)}
                       </td>
-                      <td className="py-2 px-2 text-right font-mono">
+                      <td className="py-2 px-2 text-right font-mono font-medium">
                         {formatEvolutionIndex(n.evolutionIndex26)}
                       </td>
                     </tr>
@@ -641,7 +657,7 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
       {/* Row 3: Section G — CAGR vs Latest Growth Scatter & YTD-vs-MAT Momentum Bars */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Card G1: CAGR vs Latest Growth Scatter */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col">
           <div className="mb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-500" />
@@ -657,10 +673,10 @@ export const ShareAndMatrixView: React.FC<ShareAndMatrixViewProps> = ({ bundle }
         </div>
 
         {/* Card G2: YTD vs MAT Momentum Bars */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/95 border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col">
           <div className="mb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Activity className="w-4 h-4 text-cyan-500" />
+              <Activity className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               <span>G2. Short-Term Momentum: YTD Aug Growth minus MAT Aug Growth (pp)</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

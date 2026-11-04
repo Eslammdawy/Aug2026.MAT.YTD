@@ -29,10 +29,10 @@ const GrowthBadge: React.FC<{
 }> = ({ text, positive, label }) => {
   const colorClass =
     positive === null
-      ? 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30'
+      ? 'bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300 border-slate-200 dark:border-slate-500/30'
       : positive
-      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-      : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+      : 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400 border-rose-200 dark:border-rose-500/30';
 
   return (
     <span
@@ -72,14 +72,14 @@ export const ExecutiveSummaryBanner: React.FC<ExecutiveSummaryBannerProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Market Value (LC = EGP) + Growth + 2-yr CAGR */}
         <div
-          className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between"
+          className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-[0_2px_12px_-3px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col justify-between"
           title={`Exact ${activeLabel} Value: ${formatExactValue(active.value26, 'value')} | 2025: ${formatExactValue(active.value25, 'value')} | 2024: ${formatExactValue(active.value24, 'value')}`}
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {activeLabel} LC Value
             </span>
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
+            <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
@@ -123,14 +123,14 @@ export const ExecutiveSummaryBanner: React.FC<ExecutiveSummaryBannerProps> = ({
 
         {/* Card 2: Units Volume + Growth + 2-yr CAGR (Always juxtaposed next to Value) */}
         <div
-          className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between"
+          className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-[0_2px_12px_-3px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col justify-between"
           title={`Exact ${activeLabel} Units: ${formatExactValue(active.units26, 'units')} | 2025: ${formatExactValue(active.units25, 'units')} | 2024: ${formatExactValue(active.units24, 'units')}`}
         >
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               {activeLabel} Units Volume
             </span>
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20">
               <Package className="w-4 h-4" />
             </div>
           </div>
@@ -169,12 +169,12 @@ export const ExecutiveSummaryBanner: React.FC<ExecutiveSummaryBannerProps> = ({
         </div>
 
         {/* Card 3: Active Products & Packs Portfolio Scope */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-[0_2px_12px_-3px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Active Products & Packs
             </span>
-            <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-500">
+            <div className="p-1.5 rounded-lg bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400 border border-cyan-100 dark:border-cyan-500/20">
               <BarChart3 className="w-4 h-4" />
             </div>
           </div>
@@ -215,12 +215,12 @@ export const ExecutiveSummaryBanner: React.FC<ExecutiveSummaryBannerProps> = ({
         </div>
 
         {/* Card 4: Top-5 / Top-10 Concentration & HHI */}
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-[0_2px_12px_-3px_rgba(15,23,42,0.06),0_1px_3px_rgba(15,23,42,0.04)] flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Brand Concentration
             </span>
-            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
+            <div className="p-1.5 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-100 dark:border-purple-500/20">
               <PieChart className="w-4 h-4" />
             </div>
           </div>

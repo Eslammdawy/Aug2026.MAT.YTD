@@ -4,7 +4,6 @@ import {
   Boxes,
   Compass,
   Loader2,
-  PieChart,
   RotateCcw,
   Table2,
 } from 'lucide-react';
@@ -12,7 +11,6 @@ import { ExecutiveSummaryBanner } from './components/ExecutiveSummaryBanner';
 import { HeaderBar } from './components/HeaderBar';
 import { InterlinkedFilterBar } from './components/InterlinkedFilterBar';
 import { MainHierarchyTable } from './components/MainHierarchyTable';
-import { MarketStructureView } from './components/views/MarketStructureView';
 import { PortfolioAndLaunchesView } from './components/views/PortfolioAndLaunchesView';
 import { ShareAndMatrixView } from './components/views/ShareAndMatrixView';
 import { buildTableViewData } from './lib/aggregationEngine';
@@ -27,12 +25,6 @@ const CHART_TABS: {
   sectionsBadge: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  {
-    id: 'structure',
-    label: 'Market Structure & Concentration',
-    sectionsBadge: 'Sec B & H',
-    icon: PieChart,
-  },
   {
     id: 'share',
     label: 'Share Matrix, Shifts & Momentum',
@@ -57,6 +49,7 @@ export const App: React.FC = () => {
     activeTab,
     groupBy,
     selections,
+    theme,
     loadDataset,
     setActiveTab,
     resetAllFilters,
@@ -65,6 +58,13 @@ export const App: React.FC = () => {
   useEffect(() => {
     loadDataset();
   }, [loadDataset]);
+
+  // Synchronize document theme class with store theme state (daylight default)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+    }
+  }, [theme]);
 
   // 1. Compute bi-directional interlinked filter state + matching scope rows
   const filterState = useMemo(() => {
@@ -78,7 +78,7 @@ export const App: React.FC = () => {
     return buildTableViewData(indexed, filterState, period, measure, groupBy);
   }, [indexed, filterState, period, measure, groupBy]);
 
-  // 3. Compute Complete Scoped Analytics Bundle for Sections A–J
+  // 3. Compute Complete Scoped Analytics Bundle for Sections
   const analyticsBundle = useMemo(() => {
     if (!indexed || !filterState) return null;
     return computeScopedAnalyticsBundle(indexed, filterState, period, measure);
@@ -87,7 +87,7 @@ export const App: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
           Loading IQVIA Egypt Pharma Market Dataset…
         </h2>
@@ -101,7 +101,7 @@ export const App: React.FC = () => {
   if (error || !indexed || !filterState || !tableData || !analyticsBundle) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md p-6 rounded-2xl bg-white dark:bg-slate-900 border border-rose-500/40 shadow-xl">
+        <div className="max-w-md p-6 rounded-2xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-500/40 shadow-xl">
           <AlertOctagon className="w-10 h-10 text-rose-500 mx-auto mb-3" />
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
             Failed to Load Market Dataset
@@ -116,7 +116,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={() => loadDataset()}
-            className="mt-4 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500"
+            className="mt-4 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm"
           >
             Retry Loading
           </button>
@@ -128,11 +128,11 @@ export const App: React.FC = () => {
   const isEmptyScope = filterState.matchingPackRowIndices.length === 0;
 
   return (
-    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
+    <div className="min-h-screen bg-slate-50/90 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col transition-colors">
       {/* Sticky Top Header */}
       <HeaderBar />
 
-      {/* Bi-Directional Interlinked Filter Bar */}
+      {/* Filter Bar */}
       <InterlinkedFilterBar filterState={filterState} />
 
       {/* Section A: Persistent Executive Summary Banner + Auto-Generated Insights */}
@@ -146,14 +146,14 @@ export const App: React.FC = () => {
       <main className="max-w-[1680px] w-full mx-auto px-4 sm:px-6 py-3 flex-1 space-y-6">
         {/* Empty State if Filters Result in 0 Rows */}
         {isEmptyScope ? (
-          <div className="p-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+          <div className="p-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3 shadow-sm">
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               No products or packs match the current filter combination.
             </p>
             <button
               type="button"
               onClick={resetAllFilters}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset All Filters</span>
@@ -167,15 +167,15 @@ export const App: React.FC = () => {
               aria-label="Explorer Table (Product > Pack)"
               className="space-y-2.5 scroll-mt-20"
             >
-              <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-sm shadow-indigo-500/20">
+                  <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-sm shadow-indigo-600/20">
                     <Table2 className="w-4 h-4 shrink-0" />
                   </div>
                   <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                     Explorer Table (Product &gt; Pack)
                   </h2>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20">
                     Core Table
                   </span>
                 </div>
@@ -187,12 +187,12 @@ export const App: React.FC = () => {
             {/* 2. Bottom Charts & Visual Analytics Section */}
             <section
               aria-label="Interactive Charts and Market Analytics"
-              className="space-y-4 pt-2 border-t border-slate-200/80 dark:border-slate-800/80"
+              className="space-y-4 pt-2 border-t border-slate-200/90 dark:border-slate-800/80"
             >
               {/* Chart View Tabs */}
               <nav
                 aria-label="Analytics Views Navigation"
-                className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm"
+                className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
               >
                 {CHART_TABS.map((t) => {
                   const Icon = t.icon;
@@ -204,8 +204,8 @@ export const App: React.FC = () => {
                       onClick={() => setActiveTab(t.id)}
                       className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60'
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
@@ -224,9 +224,6 @@ export const App: React.FC = () => {
                 })}
               </nav>
 
-              {activeTab === 'structure' && (
-                <MarketStructureView bundle={analyticsBundle} />
-              )}
               {activeTab === 'share' && (
                 <ShareAndMatrixView bundle={analyticsBundle} />
               )}

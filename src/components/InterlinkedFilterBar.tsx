@@ -4,10 +4,6 @@ import {
   AlertCircle,
   Check,
   ChevronDown,
-  Eye,
-  EyeOff,
-  Filter,
-  Hash,
   RotateCcw,
   Search,
   Sparkles,
@@ -30,31 +26,31 @@ const DIM_META: Record<
     label: 'ATC1 Class',
     shortLabel: 'ATC1',
     description: 'Anatomical Main Group (16 classes)',
-    badgeColor: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/30',
+    badgeColor: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 border-blue-200 dark:border-blue-500/30',
   },
   atc4: {
     label: 'ATC4 Subclass',
     shortLabel: 'ATC4',
     description: 'Therapeutic/Chemical Subclass (507 classes)',
-    badgeColor: 'bg-purple-500/15 text-purple-600 dark:text-purple-300 border-purple-500/30',
+    badgeColor: 'bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300 border-purple-200 dark:border-purple-500/30',
   },
   nfc1: {
     label: 'NFC1 Form',
     shortLabel: 'NFC1',
     description: 'New Form Code Dosage Form (16 forms)',
-    badgeColor: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/30',
+    badgeColor: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-300 border-cyan-200 dark:border-cyan-500/30',
   },
   product: {
     label: 'Product (Brand)',
     shortLabel: 'Product',
     description: 'Commercial Brand Name (10,161 products)',
-    badgeColor: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30',
+    badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30',
   },
   pack: {
     label: 'Pack Presentation',
     shortLabel: 'Pack',
     description: 'Strength, Form & Pack Size (8,823 packs)',
-    badgeColor: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/30',
+    badgeColor: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 border-amber-200 dark:border-amber-500/30',
   },
 };
 
@@ -151,33 +147,33 @@ const VirtualizedFilterDropdown: React.FC<VirtualizedFilterDropdownProps> = ({
   const isNarrowedByOther = hasOtherFiltersActive && availableCount < totalDictSize;
 
   return (
-    <div ref={containerRef} className="relative flex-1 min-w-[180px]">
+    <div ref={containerRef} className="relative flex-1 min-w-[170px]">
       <button
         type="button"
         onClick={onToggleOpen}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-left transition-all ${
+        className={`w-full h-[48px] flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border text-left transition-all ${
           selectedIndices.length > 0
-            ? 'bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/50 text-slate-900 dark:text-white shadow-sm'
+            ? 'bg-indigo-50/90 dark:bg-indigo-500/15 border-indigo-400 dark:border-indigo-500/50 text-indigo-950 dark:text-white shadow-sm ring-1 ring-indigo-500/20'
             : isNarrowedByOther
-            ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/40 text-slate-800 dark:text-slate-200'
-            : 'bg-slate-50 dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+            ? 'bg-emerald-50/60 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/40 text-slate-800 dark:text-slate-200 hover:border-emerald-400'
+            : 'bg-white dark:bg-slate-900/90 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
         }`}
       >
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold tracking-wide uppercase text-slate-900 dark:text-slate-100">
+          <div className="flex items-center gap-1.5 leading-tight">
+            <span className="text-[11px] font-bold tracking-wide uppercase text-slate-900 dark:text-slate-100">
               {meta.label}
             </span>
             {selectedIndices.length > 0 && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-600 text-white">
-                {selectedIndices.length} selected
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-600 text-white leading-none">
+                {selectedIndices.length}
               </span>
             )}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 flex items-center gap-1">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 flex items-center gap-1 leading-tight">
             {isNarrowedByOther ? (
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-                <Sparkles className="w-3 h-3 shrink-0" />
+              <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1">
+                <Sparkles className="w-3 h-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 {availableCount.toLocaleString()} of {totalDictSize.toLocaleString()} linked
               </span>
             ) : (
@@ -187,18 +183,18 @@ const VirtualizedFilterDropdown: React.FC<VirtualizedFilterDropdownProps> = ({
         </div>
         <ChevronDown
           className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${
-            isOpen ? 'rotate-180 text-indigo-400' : ''
+            isOpen ? 'rotate-180 text-indigo-600 dark:text-indigo-400' : ''
           }`}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 sm:w-[360px] mt-1.5 z-50 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl shadow-black/40 overflow-hidden">
+        <div className="absolute left-0 w-full sm:w-[360px] mt-1.5 z-50 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700 shadow-xl shadow-slate-900/10 dark:shadow-black/50 overflow-hidden">
           {/* Header & Search */}
-          <div className="p-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60">
+          <div className="p-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60">
             <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 flex items-center justify-between">
               <span>{meta.description}</span>
-              <span className="font-mono text-[10px] text-indigo-500 dark:text-indigo-400">
+              <span className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400">
                 OR within • AND across
               </span>
             </div>
@@ -331,11 +327,7 @@ export const InterlinkedFilterBar: React.FC<InterlinkedFilterBarProps> = ({ filt
   const {
     indexed,
     selections,
-    showUnavailableOptions,
-    optionMetricDisplay,
     pruneNotice,
-    setShowUnavailableOptions,
-    setOptionMetricDisplay,
     toggleFilterValue,
     clearDimension,
     resetAllFilters,
@@ -354,74 +346,11 @@ export const InterlinkedFilterBar: React.FC<InterlinkedFilterBarProps> = ({ filt
 
   return (
     <section
-      aria-label="Interlinked Market Filters"
-      className="bg-white dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800/80 transition-colors"
+      aria-label="Market Filters"
+      className="bg-white/95 dark:bg-slate-900/90 border-b border-slate-200/90 dark:border-slate-800/80 shadow-sm backdrop-blur-sm transition-colors"
     >
-      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 py-3 space-y-2.5">
-        {/* Top Row: Filter Label + Options Settings */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-            <Filter className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="font-semibold text-slate-800 dark:text-slate-200">
-              Bi-Directional Interlinked Filters
-            </span>
-            <span className="hidden md:inline text-slate-400 dark:text-slate-500">
-              — Selecting any Product, Pack, or Class dynamically narrows all other filters in both directions
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              Scope Level: {filterState.scopeAggregationLevel} (
-              {filterState.matchingPackRowIndices.length.toLocaleString()} packs)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs">
-            {/* Option Badge Display Toggle: 2026 Value/Units vs Pack Count */}
-            <button
-              type="button"
-              onClick={() =>
-                setOptionMetricDisplay(optionMetricDisplay === 'value' ? 'count' : 'value')
-              }
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700/70 text-[11px]"
-              title="Toggle between showing 2026 Value/Units or Pack Row Count next to each filter option"
-            >
-              <Hash className="w-3 h-3 text-indigo-400" />
-              <span>Badge: {optionMetricDisplay === 'value' ? '2026 Sales' : 'Pack Count'}</span>
-            </button>
-
-            {/* Hide vs Grey out 0-match options */}
-            <button
-              type="button"
-              onClick={() => setShowUnavailableOptions(!showUnavailableOptions)}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700/70 text-[11px]"
-              title="User setting: Hide options with 0 matching rows, or show them greyed out"
-            >
-              {showUnavailableOptions ? (
-                <>
-                  <Eye className="w-3 h-3 text-amber-400" />
-                  <span>0-Match: Greyed Out</span>
-                </>
-              ) : (
-                <>
-                  <EyeOff className="w-3 h-3 text-emerald-400" />
-                  <span>0-Match: Hidden</span>
-                </>
-              )}
-            </button>
-
-            {totalSelectedCount > 0 && (
-              <button
-                type="button"
-                onClick={resetAllFilters}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 font-semibold text-[11px] transition-colors"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset all ({totalSelectedCount})</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 5 Interlinked Filter Dropdowns in exact required display order: ATC1, ATC4, NFC1, Product, Pack */}
+      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 py-2.5">
+        {/* 5 Interlinked Filter Dropdowns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
           {DIMENSION_KEYS.map((dim) => {
             const hasOtherFiltersActive = DIMENSION_KEYS.some(
@@ -443,9 +372,21 @@ export const InterlinkedFilterBar: React.FC<InterlinkedFilterBarProps> = ({ filt
           })}
         </div>
 
-        {/* Active Filter Chips Bar + Auto-Prune Notice */}
+        {/* Active Filter Chips Bar + Auto-Prune Notice + Reset Button */}
         {(totalSelectedCount > 0 || pruneNotice) && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-2 mt-2 border-t border-slate-200/80 dark:border-slate-800/70">
+            {totalSelectedCount > 0 && (
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 hover:bg-rose-100 dark:hover:bg-rose-500/20 font-semibold text-[11px] transition-colors shadow-sm shrink-0"
+                title="Reset all active dimension filters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset all ({totalSelectedCount})</span>
+              </button>
+            )}
+
             {pruneNotice && (
               <div
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"

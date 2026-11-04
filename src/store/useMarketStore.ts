@@ -79,12 +79,21 @@ function parseIntList(param: string | null, maxLen: number): number[] {
     .filter((n) => Number.isInteger(n) && n >= 0 && n < maxLen);
 }
 
+function readInitialTheme(): 'dark' | 'light' {
+  if (typeof window === 'undefined') return 'light';
+  try {
+    const stored = localStorage.getItem('iqvia_theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+  } catch {}
+  return 'light';
+}
+
 function readInitialUrlParams() {
   if (typeof window === 'undefined') {
     return {
       period: 'mat' as PeriodType,
       measure: 'value' as MeasureType,
-      activeTab: 'structure' as ActiveTab,
+      activeTab: 'share' as ActiveTab,
       groupBy: 'tree_product_pack' as GroupByMode,
       shareBasis: 'scope' as ShareBasis,
       tableSearch: '',
@@ -100,10 +109,10 @@ function readInitialUrlParams() {
 
   const period: PeriodType = p === 'ytd' ? 'ytd' : 'mat';
   const measure: MeasureType = m === 'units' ? 'units' : 'value';
-  const validTabs: ActiveTab[] = ['structure', 'share', 'portfolio'];
+  const validTabs: ActiveTab[] = ['share', 'portfolio', 'structure'];
   const activeTab: ActiveTab = validTabs.includes(tab as ActiveTab)
     ? (tab as ActiveTab)
-    : 'structure';
+    : 'share';
 
   const validGroupBys: GroupByMode[] = [
     'tree_product_pack',
@@ -139,7 +148,7 @@ function syncStateToUrl(state: {
   const params = new URLSearchParams();
   params.set('period', state.period);
   params.set('measure', state.measure);
-  if (state.activeTab !== 'structure') params.set('tab', state.activeTab);
+  if (state.activeTab !== 'share') params.set('tab', state.activeTab);
   if (state.groupBy !== 'tree_product_pack') params.set('groupBy', state.groupBy);
   if (state.shareBasis !== 'scope') params.set('shareBasis', state.shareBasis);
   if (state.tableSearch.trim()) params.set('q', state.tableSearch.trim());
@@ -171,7 +180,7 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
 
   showUnavailableOptions: false,
   optionMetricDisplay: 'value',
-  theme: 'dark',
+  theme: readInitialTheme(),
   pruneNotice: null,
 
   loadDataset: async () => {
@@ -262,6 +271,9 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
     const next = get().theme === 'dark' ? 'light' : 'dark';
     if (typeof document !== 'undefined') {
       document.documentElement.classList.toggle('dark', next === 'dark');
+      try {
+        localStorage.setItem('iqvia_theme', next);
+      } catch {}
     }
     set({ theme: next });
   },
